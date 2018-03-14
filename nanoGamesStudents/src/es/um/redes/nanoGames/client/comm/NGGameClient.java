@@ -20,7 +20,7 @@ public class NGGameClient {
 
 	public NGGameClient(String serverName) {
 		//Creation of the socket and streams
-		//TODO
+		//TODO Tanto el socket como el dos y el dis esta a null.
 		try {
 			InetSocketAddress socketServidor  = new InetSocketAddress(InetAddress.getByName(serverName), SERVER_PORT);
 			this.socket = new Socket(socketServidor.getHostName(),socketServidor.getPort());
