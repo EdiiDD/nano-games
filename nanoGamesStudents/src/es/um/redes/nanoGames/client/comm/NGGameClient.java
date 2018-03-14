@@ -46,7 +46,7 @@ public class NGGameClient {
 			// Crear mensaje de CONFIRMACION; AJO AJO
 			esValido = true;
 		} else {
-			// Crear mensaje de DENEGACION;
+			// Crear mensaje de DENEGACION; OJO OJO 
 			esValido = false;
 		}
 		//Make message (NGMessage.makeXXMessage)
