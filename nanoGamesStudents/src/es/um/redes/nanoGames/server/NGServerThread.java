@@ -37,8 +37,17 @@ public class NGServerThread extends Thread {
 	//TODO Add additional fields
 
 	public NGServerThread(NGServerManager manager, Socket socket, String brokerHostname) {
-		//Initialization of the thread
-		//TODO
+		this.socket = socket;															//el socket de este hilo es el que nos pasen
+		try {
+			this.dis = new DataInputStream(socket.getInputStream());
+			this.dos = new DataOutputStream(socket.getOutputStream());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			System.out.println("Either the dis or the dos couldn't be made.");
+		}
+		this.brokerClient = new BrokerClient(brokerHostname);							//el brokerClient uno nuevo con ese nombre
+		this.serverManager = manager;													//el manager del server, pues ese	
+	
 	}
 
 	//Main loop
@@ -67,6 +76,10 @@ public class NGServerThread extends Thread {
 	private void receiveAndVerifyToken() throws IOException {
 		boolean tokenVerified = false;
 		while (!tokenVerified) {
+			long tokenCliente = this.dis.readLong();
+			if (!(brokerClient.getToken()-tokenCliente>=TOKEN_THRESHOLD)) //si su token - el token que lee del cliente no es mayorigual
+					tokenVerified=true;									  //se verifica
+			this.dos.writeBoolean(tokenVerified);				//si esto no se da, el cliente tendra que volver a enviar el token
 				//We extract the token from the message
 				//now we obtain a new token from the broker
 				//We check the token and send an answer to the client

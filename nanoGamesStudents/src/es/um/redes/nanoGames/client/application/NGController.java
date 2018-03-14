@@ -162,14 +162,16 @@ public class NGController {
 		int numIntentos = 0;
 		// We try to obtain a token from the broker
 
-		// while(numIntentos != attempts ) {
-		try {
-			token = brokerClient.getToken();
-			numIntentos++;
-		} catch (IOException e1) {
-			System.err.println("Error al obtener un token del Broker");
+		while(numIntentos < attempts && token==0 ) {
+			try {
+				numIntentos++;
+				token = brokerClient.getToken();
+			} catch (IOException e1) {
+				System.err.println("Error al obtener un token del Broker");
+				token=0;
+			}
 		}
-		// }
+		
 		// If we have a token then we will send it to the game server
 		if (token != 0) {
 			try {

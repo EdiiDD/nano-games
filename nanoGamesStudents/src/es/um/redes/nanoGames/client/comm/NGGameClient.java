@@ -20,7 +20,7 @@ public class NGGameClient {
 
 	public NGGameClient(String serverName) {
 		//Creation of the socket and streams
-		//TODO Tanto el socket como el dos y el dis esta a null.
+		//TODO 
 		try {
 			InetSocketAddress socketServidor  = new InetSocketAddress(InetAddress.getByName(serverName), SERVER_PORT);
 			this.socket = new Socket(socketServidor.getHostName(),socketServidor.getPort());
@@ -39,21 +39,20 @@ public class NGGameClient {
 
 	public boolean verifyToken(long token,BrokerClient brokerClient) throws IOException {
 		//SND(token) and RCV(TOKEN_VALID) or RCV(TOKEN_INVALID)
-		long tokenActual = brokerClient.getToken();
-		boolean esValido = false;
 		
-		if((tokenActual - token) < 1000) {
-			// Crear mensaje de CONFIRMACION; AJO AJO
-			esValido = true;
-		} else {
-			// Crear mensaje de DENEGACION; OJO OJO 
-			esValido = false;
-		}
+		
+		/**
+		 * De forma cutre: este metodo simplemente cogerá el token y lo lanzará hacia el cliente
+		 * el servidor le devolvera un booleano si cuando le pida el suyo ve que es menor de mil de diferencia
+		 */		
+		dos.writeLong(token);
+		return dis.readBoolean();
+		
+			
 		//Make message (NGMessage.makeXXMessage)
 		//Send messge (dos.write())
 		//this.dos.writeLong(token);
 		//Receive response (NGMessage.readMessageFromSocket)
-		return esValido;
 	}
 	
 	public boolean registerNickname(String nick) throws IOException {

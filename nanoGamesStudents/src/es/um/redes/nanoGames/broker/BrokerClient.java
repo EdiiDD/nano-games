@@ -31,7 +31,6 @@ public class BrokerClient{
 	 * @throws IOException
 	 */
 	// servername -> localhost
-	// en caso de que falle llamamos l mismo metodo
 	public BrokerClient(String agentName) {
 		// Registrar dirección del servidor
 		// Crear socket de cliente
@@ -107,7 +106,7 @@ public class BrokerClient{
 		this.socket.setSoTimeout(1000); // timeout de 1 segundo
 		byte[] paqueteRecepcion = new byte[PACKET_MAX_SIZE]; // creo el buffer del paquete recepcion
 		DatagramPacket dpRecepcion = new DatagramPacket(paqueteRecepcion, paqueteRecepcion.length);
-		socket.receive(dpRecepcion);
+		this.socket.receive(dpRecepcion);
 		return getTimeTicks(dpRecepcion.getData());
 
 	}
