@@ -163,7 +163,7 @@ public class NGController {
 		// We try to obtain a token from the broker
 
 		while(numIntentos < attempts && token==0 ) {
-			try {
+			try { 
 				numIntentos++;
 				token = brokerClient.getToken();
 			} catch (IOException e1) {

@@ -5,7 +5,7 @@ public class SnmpClientException extends RuntimeException {
 
 	public SnmpClientException() {
     }
-
+ 
     public SnmpClientException(String message) {
         super(message);
     }

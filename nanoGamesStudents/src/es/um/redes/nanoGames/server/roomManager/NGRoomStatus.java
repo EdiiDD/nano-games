@@ -1,4 +1,4 @@
-package es.um.redes.nanoGames.server.roomManager;
+ package es.um.redes.nanoGames.server.roomManager;
 
 public class NGRoomStatus {
 	public short statusNumber;

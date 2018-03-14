@@ -1,4 +1,4 @@
-package es.um.redes.nanoGames.client.shell;
+ package es.um.redes.nanoGames.client.shell;
 
 public class NGCommands {
 	/**

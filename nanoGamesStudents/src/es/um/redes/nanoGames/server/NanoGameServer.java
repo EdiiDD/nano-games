@@ -24,7 +24,7 @@ public class NanoGameServer implements Runnable {
     {
     	this.socketAddress = a;
     	//This will be the Status shared among all the Threads
-    	//manager = new NGServerManager();
+    	// manager = new NGServerManager();
     	//TODO We add one manager for each game we have implemented
     	//manager.registerRoomManager(new NGMyGame());
     }

@@ -1,4 +1,4 @@
-package es.um.redes.nanoGames.server;
+ package es.um.redes.nanoGames.server;
 
 public class NGPlayerInfo {
 	//Constructor to make copies

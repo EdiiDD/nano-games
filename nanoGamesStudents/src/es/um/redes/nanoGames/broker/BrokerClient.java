@@ -93,7 +93,7 @@ public class BrokerClient{
 	 * @throws IOException
 	 */
 	public long getToken() throws IOException {
-
+ 
 		// Construir solicitud
 		// Enviar solicitud
 		// Recibir respuesta

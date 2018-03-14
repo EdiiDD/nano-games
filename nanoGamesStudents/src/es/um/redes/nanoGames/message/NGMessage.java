@@ -1,4 +1,4 @@
-package es.um.redes.nanoGames.message;
+ package es.um.redes.nanoGames.message;
 
 import java.io.DataInputStream;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package es.um.redes.nanoGames.server;
+ package es.um.redes.nanoGames.server;
 
 import java.util.HashMap;
 import java.util.Set;

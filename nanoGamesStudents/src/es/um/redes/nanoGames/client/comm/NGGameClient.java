@@ -49,7 +49,7 @@ public class NGGameClient {
 		return dis.readBoolean();
 		
 			
-		//Make message (NGMessage.makeXXMessage)
+		//Make  message (NGMessage.makeXXMessage)
 		//Send messge (dos.write())
 		//this.dos.writeLong(token);
 		//Receive response (NGMessage.readMessageFromSocket)

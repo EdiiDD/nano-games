@@ -1,4 +1,4 @@
-package es.um.redes.nanoGames.message;
+ package es.um.redes.nanoGames.message;
 
 /*
 Include here the specification of this particular message

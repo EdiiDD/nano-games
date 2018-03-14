@@ -11,7 +11,7 @@ public class NanoGame {
 			return;
 		}
 
-		// Create controller object that will accept and process user commands
+		// Create controller object that will  accept and process user commands
 		NGController controller = new NGController(args[0],args[1]);
 
 		// Begin conversation with broker by getting the token

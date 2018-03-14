@@ -76,7 +76,7 @@ public class NGServerThread extends Thread {
 	private void receiveAndVerifyToken() throws IOException {
 		boolean tokenVerified = false;
 		while (!tokenVerified) {
-			long tokenCliente = this.dis.readLong();
+			long tokenCliente = this.dis .readLong();
 			if (!(brokerClient.getToken()-tokenCliente>=TOKEN_THRESHOLD)) //si su token - el token que lee del cliente no es mayorigual
 					tokenVerified=true;									  //se verifica
 			this.dos.writeBoolean(tokenVerified);				//si esto no se da, el cliente tendra que volver a enviar el token
