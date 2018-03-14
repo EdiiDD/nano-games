@@ -43,7 +43,7 @@ public class NGGameClient {
 		boolean esValido = false;
 		
 		if((tokenActual - token) < 1000) {
-			// Crear mensaje de CONFIRMACION;
+			// Crear mensaje de CONFIRMACION; AJO AJO
 			esValido = true;
 		} else {
 			// Crear mensaje de DENEGACION;
