@@ -9,6 +9,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import es.um.redes.nanoGames.broker.BrokerClient;
+import es.um.redes.nanoGames.message.NGMensajeConfirmar;
+import es.um.redes.nanoGames.message.NGMensajeEnviarToken;
 
 //This class provides the functionality required to exchange messages between the client and the game server 
 public class NGGameClient {
@@ -17,6 +19,7 @@ public class NGGameClient {
 	protected DataInputStream dis;
 	
 	private static final int SERVER_PORT = 6969;
+	private static final int MAXIMUM_TCP_SIZE =65535;
 
 	public NGGameClient(String serverName) {
 		//Creation of the socket and streams
@@ -45,14 +48,23 @@ public class NGGameClient {
 		 * De forma cutre: este metodo simplemente cogerá el token y lo lanzará hacia el cliente
 		 * el servidor le devolvera un booleano si cuando le pida el suyo ve que es menor de mil de diferencia
 		 */		
-		dos.writeLong(token);
-		return dis.readBoolean();
+		//dos.writeLong(token);
+		//return dis.readBoolean();
 		
 			
 		//Make  message (NGMessage.makeXXMessage)
 		//Send messge (dos.write())
 		//this.dos.writeLong(token);
 		//Receive response (NGMessage.readMessageFromSocket)
+		NGMensajeEnviarToken met_enviar = new NGMensajeEnviarToken();
+		String data_to_send = met_enviar.createNGMensajeEnviarToken(token);
+		dos.write(data_to_send.getBytes());
+		byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
+		dis.read(arrayBytes);
+		String data_recived = new String(arrayBytes);
+		NGMensajeConfirmar mc_recived = new NGMensajeConfirmar();
+		mc_recived.processNGMensajeConfirmar(data_recived);
+		return mc_recived.isConfirmated();
 	}
 	
 	public boolean registerNickname(String nick) throws IOException {

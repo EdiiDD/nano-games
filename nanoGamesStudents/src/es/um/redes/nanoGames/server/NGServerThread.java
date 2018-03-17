@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.net.Socket;
 
 import es.um.redes.nanoGames.broker.BrokerClient;
+import es.um.redes.nanoGames.message.NGMensajeConfirmar;
+import es.um.redes.nanoGames.message.NGMensajeEnviarToken;
 import es.um.redes.nanoGames.server.roomManager.NGRoomManager;
 
 /**
@@ -35,6 +37,7 @@ public class NGServerThread extends Thread {
 	//Current RoomManager (it depends on the room the user enters)
 	NGRoomManager roomManager;
 	//TODO Add additional fields
+	private static final int MAXIMUM_TCP_SIZE =65535;
 
 	public NGServerThread(NGServerManager manager, Socket socket, String brokerHostname) {
 		this.socket = socket;															//el socket de este hilo es el que nos pasen
@@ -76,13 +79,25 @@ public class NGServerThread extends Thread {
 	private void receiveAndVerifyToken() throws IOException {
 		boolean tokenVerified = false;
 		while (!tokenVerified) {
-			long tokenCliente = this.dis .readLong();
+			/*long tokenCliente = this.dis .readLong();
 			if (!(brokerClient.getToken()-tokenCliente>=TOKEN_THRESHOLD)) //si su token - el token que lee del cliente no es mayorigual
 					tokenVerified=true;									  //se verifica
-			this.dos.writeBoolean(tokenVerified);				//si esto no se da, el cliente tendra que volver a enviar el token
-				//We extract the token from the message
+			this.dos.writeBoolean(tokenVerified);*/				//si esto no se da, el cliente tendra que volver a enviar el token
+			
+			//We extract the token from the message
 				//now we obtain a new token from the broker
 				//We check the token and send an answer to the client
+			long tokenPropio = brokerClient.getToken();
+			byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
+			dis.read(arrayBytes);
+			String token_recibido = new String(arrayBytes);
+			NGMensajeEnviarToken met_recibido = new NGMensajeEnviarToken();
+			met_recibido.processNGMensajeEnviarToken(token_recibido);
+			NGMensajeConfirmar mc_enviar = new NGMensajeConfirmar();
+			if (tokenPropio - met_recibido.getToken() <= TOKEN_THRESHOLD) 
+				tokenVerified=true;
+			String mensaje_confirmar = mc_enviar.createNGMensajeConfirmar(tokenVerified);
+			dos.write(mensaje_confirmar.getBytes());
 		}
 	}
 
