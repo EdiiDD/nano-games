@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="1.8.0_161" class="java.beans.XMLDecoder">
+ <object class="xml.ListaUsuarios" id="ListaUsuarios0">
+  <void property="database">
+   <void method="add">
+    <object class="xml.Usuario">
+     <void property="contraseña">
+      <string>u2</string>
+     </void>
+     <void property="nombreUsuario">
+      <string>u1</string>
+     </void>
+    </object>
+   </void>
+   <void method="add">
+    <object class="xml.Usuario">
+     <void property="contraseña">
+      <string>v2</string>
+     </void>
+     <void property="nombreUsuario">
+      <string>v1</string>
+     </void>
+    </object>
+   </void>
+  </void>
+ </object>
+</java>
