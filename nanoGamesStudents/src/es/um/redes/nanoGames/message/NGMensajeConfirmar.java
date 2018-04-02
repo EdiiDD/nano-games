@@ -35,7 +35,7 @@ public class NGMensajeConfirmar {
 		System.out.println("- - - Recibiendo - - - ");
 		NGMensajeConfirmar mc_receptor = new NGMensajeConfirmar();
 		mc_receptor.processNGMensajeConfirmar(datos_emisor);
-		System.out.println("¿Confirmado?: "+mc_receptor.isConfirmated());
+		System.out.println("ï¿½Confirmado?: "+mc_receptor.isConfirmated());
 	}
 	
 }

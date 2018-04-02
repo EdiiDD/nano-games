@@ -1,20 +1,64 @@
- package es.um.redes.nanoGames.server;
+package es.um.redes.nanoGames.server;
 
+import javax.persistence.*;
+
+@Entity
+@Table(name = "PLAYERINFO")
 public class NGPlayerInfo {
-	//Constructor to make copies
+	// TODO Include additional fields if required
+	
+	@Id
+	@Column(name = "Nick")
+	private String nick; // Nickname of the user
+	
+	@Column(name = "Status")
+	private byte status; // Current status of the user (according to the automata)
+	
+	@Column(name = "Score")
+	private int score; // Current score of the user
+
+	// Contructor de la clase
+	public NGPlayerInfo(String nick, int score) {
+		this.nick = nick;
+		this.score = score;
+	}
+	
+	// Constructor to make copies
 	public NGPlayerInfo(NGPlayerInfo p) {
 		this.nick = new String(p.nick);
 		this.status = p.status;
 		this.score = p.score;
 	}
-	
-	//Default constructor
+
+	// Default constructor, usado para Hibernate
 	public NGPlayerInfo() {
+
+	}
 		
+	public void setStatus(byte status) {
+		this.status = status;
+	}
+
+	public String getNick() {
+		return nick;
+	}
+
+	public void setNick(String nick) {
+		this.nick = nick;
+	}
+
+	public int getScore() {
+		return score;
 	}
 	
-	//TODO Include additional fields if required
-	public String nick; //Nickname of the user
-	public byte status; //Current status of the user (according to the automata)
-	public int score;  //Current score of the user
+	// Metodo para actulizar el score del jugador cuando sea necesario.
+	public void actulizarScore(int score) {
+		this.score += score;
+	}
+
+	public byte getStatus() {
+		return status;
+	}
+	
+
 }

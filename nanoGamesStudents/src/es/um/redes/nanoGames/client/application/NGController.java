@@ -3,11 +3,18 @@ package es.um.redes.nanoGames.client.application;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.LinkedList;
 
 import es.um.redes.nanoGames.broker.BrokerClient;
 import es.um.redes.nanoGames.client.comm.NGGameClient;
 import es.um.redes.nanoGames.client.shell.NGCommands;
 import es.um.redes.nanoGames.client.shell.NGShell;
+import es.um.redes.nanoGames.server.NGPlayerInfo;
+
+// Clase encargada de coordinar la comunicación con el Broker y con el servidor de 
+// juegos en función de la fase en la que nos encontremos o en función de lo que el usuario 
+// introduzca a través del shell.
 
 public class NGController {
 	// Number of attempts to get a token
@@ -42,11 +49,14 @@ public class NGController {
 	private String serverHostname;
 	// Server socket;
 	private DatagramSocket socket;
-
+	// Esctructura para guardar los usuarios.
+	private HashMap<String, NGPlayerInfo> usuariosRegistrados;
+	
 	public NGController(String brokerHostname, String serverHostname) {
 		brokerClient = new BrokerClient(brokerHostname);
 		shell = new NGShell();
 		this.serverHostname = serverHostname;
+		this.usuariosRegistrados = new HashMap<>();
 	}
 
 	public byte getCurrentCommand() {
@@ -82,6 +92,7 @@ public class NGController {
 			break;
 		case NGCommands.COM_NICK:
 			// TODO
+			registerNickName();
 			break;
 		case NGCommands.COM_ROOMLIST:
 			// TODO
@@ -105,6 +116,13 @@ public class NGController {
 	private void registerNickName() {
 		// We try to register the nick in the server (it will check for duplicates)
 		// TODO
+		if (usuariosRegistrados.containsKey(this.nickname)) {
+			System.err.println("Este usuario " + this.nickname + " ya existe, intentolo de nuevo con un nuevo nick.");
+		} else {
+			NGPlayerInfo jRegistrar = new NGPlayerInfo(this.nickname, 0);
+			usuariosRegistrados.put(this.nickname, jRegistrar);
+			System.out.println("El usuario " + this.nickname + " se ha registado de forma correcta");
+		}
 	}
 
 	private void enterTheGame() {
@@ -155,30 +173,32 @@ public class NGController {
 		// TODO
 	}
 
-	// Method to obtain the token from the Broker
+	// Metodo para la obtencion del token por parte del cliente y el correspondiente
+	// envio al servidor de juegos.
 	private void getTokenAndDeliver() {
+
 		// There will be a max number of attempts
 		int attempts = MAX_NUMBER_OF_ATTEMPTS;
 		int numIntentos = 0;
-		// We try to obtain a token from the broker
 
-		while(numIntentos < attempts && token==0 ) {
-			try { 
+		// We try to obtain a token from the broker
+		while (numIntentos < attempts && token == 0) {
+			try {
 				numIntentos++;
 				token = brokerClient.getToken();
 			} catch (IOException e1) {
 				System.err.println("Error al obtener un token del Broker");
-				token=0;
+				token = 0;
 			}
 		}
-		
+
 		// If we have a token then we will send it to the game server
 		if (token != 0) {
 			try {
 				// We initialize the game client to be used to connect with the name server
 				ngClient = new NGGameClient(serverHostname);
 				// We send the token in order to verify it
-				if (!ngClient.verifyToken(token,brokerClient)) {
+				if (!ngClient.verifyToken(token, brokerClient)) {
 					System.out.println("* The token is not valid.");
 					token = 0;
 				}

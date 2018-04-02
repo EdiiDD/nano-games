@@ -11,12 +11,14 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
+import jdk.nashorn.internal.objects.annotations.ScriptClass;
+
 /**
  * Cliente SNMP sin dependencias con otras clases y con funciones de consulta
  * espec�ficas. En la actual versi�n s�lo soporta una funci�n de consulta sobre
  * el UPTIME del host.
  */
-public class BrokerClient{
+public class BrokerClient {
 	private static final int PACKET_MAX_SIZE = 484;
 	private static final int DEFAULT_PORT = 161;
 	private static final String OID_UPTIME = "1.3.6.1.2.1.1.3.0";
@@ -30,19 +32,24 @@ public class BrokerClient{
 	 * 
 	 * @throws IOException
 	 */
-	// servername -> localhost
+
 	public BrokerClient(String agentName) {
 		// Registrar dirección del servidor
 		// Crear socket de cliente
 		try {
 			try {
+				// Creacion de IP Socket Address ( IP + PUERTO), con el nombre del agenteSMP y
+				// su puerto por defecto.
 				this.agentAddress = new InetSocketAddress(InetAddress.getByName(agentName), DEFAULT_PORT);
 			} catch (UnknownHostException e) {
-				System.out.println("No se ha reconocido el host");
-			} // la direccion del server (nombre,puerto)
-			socket = new DatagramSocket(); // creo el socket para enviar-transmitir
+				// Fallo al conectarse un host.
+				System.err.println("IP address of a host could not be determined");
+			}
+			// Creacion de socket (para enviar y recivir datagram packets) que escucha en
+			// cualquier puerto libre disponible.
+			socket = new DatagramSocket();
 		} catch (SocketException e) {
-			System.out.println("No se ha podido crear el socket.");
+			System.err.println("No se ha podido crear el socket.");
 		}
 
 	}
@@ -93,20 +100,24 @@ public class BrokerClient{
 	 * @throws IOException
 	 */
 	public long getToken() throws IOException {
- 
-		// Construir solicitud
-		// Enviar solicitud
-		// Recibir respuesta
-		// Extraer TimeTicks (Token)
-		// Devolver token
-		byte[] paqueteEnvio = new byte[PACKET_MAX_SIZE]; // Paquete con tam maximo.
-		paqueteEnvio = buildRequest(); // me construye el paquete a enviar
+
+		// Creacion del buffer de envio con tamaño maximo.
+		byte[] paqueteEnvio = new byte[PACKET_MAX_SIZE];
+		// Construccion del paquete a enviar(solicitud).
+		paqueteEnvio = buildRequest();
+		// Creacion de un DatagramPacket para ser enviado.
 		DatagramPacket dpEnvio = new DatagramPacket(paqueteEnvio, paqueteEnvio.length, this.agentAddress);
-		this.socket.send(dpEnvio); // transmito el mensaje
-		this.socket.setSoTimeout(1000); // timeout de 1 segundo
-		byte[] paqueteRecepcion = new byte[PACKET_MAX_SIZE]; // creo el buffer del paquete recepcion
+		// Enviar paquete por el socket.
+		this.socket.send(dpEnvio);
+		// Timeout de 1s.
+		this.socket.setSoTimeout(1000);
+		// Creacion del buffer de recepcion con tamaño maximo.
+		byte[] paqueteRecepcion = new byte[PACKET_MAX_SIZE]; 
+		// Creacion del DatagramPacket de repecion.
 		DatagramPacket dpRecepcion = new DatagramPacket(paqueteRecepcion, paqueteRecepcion.length);
+		// Recibe el paquete por el socket.
 		this.socket.receive(dpRecepcion);
+		// Extraemos y devolvemos el token(TimeTicks)
 		return getTimeTicks(dpRecepcion.getData());
 
 	}
@@ -138,15 +149,16 @@ public class BrokerClient{
 	public void close() {
 		socket.close();
 	}
-	
+
 	public DatagramSocket getSocket() {
 		return socket;
 	}
-	
+
 	public InetSocketAddress getAgentAddress() {
 		return agentAddress;
 	}
 
+	// Main de prueba de la clase 
 	public static void main(String[] args) {
 		BrokerClient bcs = new BrokerClient("localhost");
 		try {
