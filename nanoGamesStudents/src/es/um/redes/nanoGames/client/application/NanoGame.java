@@ -2,13 +2,26 @@ package es.um.redes.nanoGames.client.application;
 
 import java.util.HashMap;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+
 import es.um.redes.nanoGames.client.shell.NGCommands;
 import es.um.redes.nanoGames.server.NGPlayerInfo;
 
 public class NanoGame {
 
+	// Interfaz que contiene los metodos para trabajar con los elementos.
+	public static EntityManager manager;
+
+	public static EntityManagerFactory emf;
+
 	public static void main(String[] args) {
 		
+		// Hibernate
+		emf = Persistence.createEntityManagerFactory("persistence");
+		manager = emf.createEntityManager();
+
 		// Check the two required arguments
 		if (args.length != 2) {
 			System.out.println("Usage: java NanoGame <broker_hostname> <server_hostname>");

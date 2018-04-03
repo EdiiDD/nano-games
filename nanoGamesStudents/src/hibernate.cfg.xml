@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC "-//Hibernate/Hibernate Configuration DTD 3.0//EN" "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+	<session-factory>
+		<property name="connection.driver_class">org.h2.Driver</property>
+		<property name="connection.url">jdbc:h2:~/Desktop/DataBase;AUTO_SERVER=TRUE;AUTO_RECONNECT=TRUE</property>
+		<property name="connection.username">sa</property>
+		<property name="connection.password"></property>
+		<property name="dialect">org.hibernate.dialect.H2Dialect</property>
+		<property name="hibernate.show_sql">false</property>
+		<property name="hibernate.hbm2ddl.auto">update</property>
+		<mapping class="es.um.redes.nanoGames.server.NGPlayerInfo" />
+	</session-factory>
+</hibernate-configuration>

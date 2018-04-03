@@ -12,7 +12,7 @@ public class Usuario {
 		this.nombreUsuario = nombreUsuario;
 	}
 	
-	public void setContraseña(String password) {
+	public void setContraseÃ±a(String password) {
 		this.password = password;
 	}
 	
@@ -20,7 +20,7 @@ public class Usuario {
 		return this.nombreUsuario;
 	}
 	
-	public String getContraseña() {
+	public String getContraseÃ±a() {
 		return this.password;
 	}	
 }

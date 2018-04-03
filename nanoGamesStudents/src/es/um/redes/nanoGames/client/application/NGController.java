@@ -3,14 +3,20 @@ package es.um.redes.nanoGames.client.application;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 
 import es.um.redes.nanoGames.broker.BrokerClient;
 import es.um.redes.nanoGames.client.comm.NGGameClient;
 import es.um.redes.nanoGames.client.shell.NGCommands;
 import es.um.redes.nanoGames.client.shell.NGShell;
 import es.um.redes.nanoGames.server.NGPlayerInfo;
+import es.um.redes.nanoGames.utils.HibernateUtil;
 
 // Clase encargada de coordinar la comunicación con el Broker y con el servidor de 
 // juegos en función de la fase en la que nos encontremos o en función de lo que el usuario 
@@ -49,14 +55,12 @@ public class NGController {
 	private String serverHostname;
 	// Server socket;
 	private DatagramSocket socket;
-	// Esctructura para guardar los usuarios.
-	private HashMap<String, NGPlayerInfo> usuariosRegistrados;
-	
+
 	public NGController(String brokerHostname, String serverHostname) {
 		brokerClient = new BrokerClient(brokerHostname);
 		shell = new NGShell();
 		this.serverHostname = serverHostname;
-		this.usuariosRegistrados = new HashMap<>();
+		this.ngClient = new NGGameClient(serverHostname);
 	}
 
 	public byte getCurrentCommand() {
@@ -91,7 +95,6 @@ public class NGController {
 			getTokenAndDeliver();
 			break;
 		case NGCommands.COM_NICK:
-			// TODO
 			registerNickName();
 			break;
 		case NGCommands.COM_ROOMLIST:
@@ -99,6 +102,16 @@ public class NGController {
 			break;
 		case NGCommands.COM_ENTER:
 			// TODO
+			break;
+		case NGCommands.COM_HELP:
+			NGCommands.printCommandsHelp();
+			break;
+		case NGCommands.COM_STATUS:
+			System.out.println("USUARIOS REGISTRADOS");
+			List<NGPlayerInfo> listaRec = (List<NGPlayerInfo>) getAll();
+			for (NGPlayerInfo ngPlayerInfo : listaRec) {
+				System.out.println(ngPlayerInfo.toString());
+			}
 			break;
 		case NGCommands.COM_QUIT:
 			ngClient.disconnect();
@@ -116,13 +129,14 @@ public class NGController {
 	private void registerNickName() {
 		// We try to register the nick in the server (it will check for duplicates)
 		// TODO
-		if (usuariosRegistrados.containsKey(this.nickname)) {
-			System.err.println("Este usuario " + this.nickname + " ya existe, intentolo de nuevo con un nuevo nick.");
-		} else {
-			NGPlayerInfo jRegistrar = new NGPlayerInfo(this.nickname, 0);
-			usuariosRegistrados.put(this.nickname, jRegistrar);
-			System.out.println("El usuario " + this.nickname + " se ha registado de forma correcta");
+		// We initialize the game client to be used to connect with the name server
+		
+		try {
+			ngClient.registerNickname(nickname);
+		} catch (IOException e) {
+			System.err.println("Nick no valido.");
 		}
+
 	}
 
 	private void enterTheGame() {
@@ -196,7 +210,7 @@ public class NGController {
 		if (token != 0) {
 			try {
 				// We initialize the game client to be used to connect with the name server
-				ngClient = new NGGameClient(serverHostname);
+				//ngClient = new NGGameClient(serverHostname);
 				// We send the token in order to verify it
 				if (!ngClient.verifyToken(token, brokerClient)) {
 					System.out.println("* The token is not valid.");
@@ -237,6 +251,118 @@ public class NGController {
 
 	public boolean shouldQuit() {
 		return currentCommand == NGCommands.COM_QUIT;
+	}
+
+	// Metodos para el control de usuarios.
+
+	// Añadir un player.
+	public boolean create(Object obj) {
+		System.out.println("LOGEAR");
+		boolean nickValido = true;
+		Session session = HibernateUtil.getSessionFactory().openSession();
+		Transaction trans = null;
+
+		try {
+			trans = session.beginTransaction();
+			session.save((NGPlayerInfo) obj);
+			session.getTransaction().commit();
+			System.out.println("NICK VALIDO1__: " + nickValido);
+		} catch (RuntimeException e) {
+			if (trans != null) {
+				trans.rollback();
+				nickValido = false;
+				System.out.println("NICK VALIDO2__: " + nickValido);
+				System.err.println("Nick no valido.");
+			}
+		} finally {
+			session.close();
+		}
+		System.out.println("NICK VALIDO3__: " + nickValido);
+		return nickValido;
+	}
+
+	// Eliminar un player.
+	public static boolean delete(Object obj) {
+		Session session = HibernateUtil.getSessionFactory().openSession();
+		Transaction trans = null;
+
+		try {
+			trans = session.beginTransaction();
+			session.delete((NGPlayerInfo) obj);
+			session.getTransaction().commit();
+			return true;
+
+		} catch (RuntimeException e) {
+			if (trans != null)
+				trans.rollback();
+			e.printStackTrace();
+			return false;
+		} finally {
+			session.close();
+		}
+	}
+
+	// Modificar un player.
+	public static void update(Object obj) {
+		Session session = HibernateUtil.getSessionFactory().openSession();
+		Transaction trans = null;
+		try {
+			trans = session.beginTransaction();
+			session.update((NGPlayerInfo) obj);
+			session.getTransaction().commit();
+		} catch (RuntimeException e) {
+			if (trans != null) {
+				trans.rollback();
+			}
+			e.printStackTrace();
+		} finally {
+			session.close();
+		}
+
+	}
+
+	// Obtener un player
+	public static Object get(int id) {
+		Session session = HibernateUtil.getSessionFactory().openSession();
+		Transaction trns = null;
+		try {
+			trns = session.beginTransaction();
+			NGPlayerInfo ngp = session.get(NGPlayerInfo.class, id);
+			session.getTransaction().commit();
+			return ngp;
+		} catch (RuntimeException e) {
+			if (trns != null) {
+				trns.rollback();
+			}
+			e.printStackTrace();
+		} finally {
+			session.close();
+		}
+		return null;
+	}
+
+	// Obtener todos los player.
+	// TODO Se puede modificar la Query para obtener los player con mejor
+	// puntuacion.
+	@SuppressWarnings("unchecked")
+	public static Object getAll() {
+		List<NGPlayerInfo> listaRec = new ArrayList<NGPlayerInfo>();
+		Session session = HibernateUtil.getSessionFactory().openSession();
+		Transaction trans = null;
+		try {
+			trans = session.beginTransaction();
+			listaRec = (ArrayList<NGPlayerInfo>) session.createQuery("FROM NGPlayerInfo").list();
+			session.getTransaction().commit();
+			return listaRec;
+		} catch (RuntimeException e) {
+			if (trans != null) {
+				trans.rollback();
+			}
+			e.printStackTrace();
+		} finally {
+			session.close();
+		}
+		return null;
 	}
 
 }

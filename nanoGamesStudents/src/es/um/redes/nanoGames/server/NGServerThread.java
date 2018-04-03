@@ -5,10 +5,16 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
 import es.um.redes.nanoGames.broker.BrokerClient;
+import es.um.redes.nanoGames.client.application.NGController;
 import es.um.redes.nanoGames.message.NGMensajeConfirmar;
+import es.um.redes.nanoGames.message.NGMensajeEnviarNickname;
 import es.um.redes.nanoGames.message.NGMensajeEnviarToken;
 import es.um.redes.nanoGames.server.roomManager.NGRoomManager;
+import es.um.redes.nanoGames.utils.HibernateUtil;
 
 /**
  * A new thread runs for each connected client
@@ -63,6 +69,7 @@ public class NGServerThread extends Thread {
 			// The first step is to receive and to verify the token
 			receiveAndVerifyToken();
 			// The second step is to receive and to verify the nick name
+			System.out.println("VERIFICAR NICKNAME");
 			receiveAndVerifyNickname();
 			// While the connection is alive...
 			while (true) {
@@ -79,18 +86,20 @@ public class NGServerThread extends Thread {
 	// Receive and verify Token (token enviado por el cliente)
 	// TODO
 	private void receiveAndVerifyToken() throws IOException {
+		System.out.println("TOKEAR");
 		boolean tokenVerified = false;
 		while (!tokenVerified) {
-			
+
 			// We extract the token from the message
 			// now we obtain a new token from the broker
 			// We check the token and send an answer to the client
 			long tokenPropio = brokerClient.getToken();
 			// Recibir(leemos) por DataInputStream, lo leido lo guardamos en el buffer
-			// arrayBites.
+			// arrayBytes.
 			byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
 			dis.read(arrayBytes);
 			String token_recibido = new String(arrayBytes);
+			System.out.println("NGSERVER TOKEN NAME:"+token_recibido);
 			// Creamos el mensaje, NGMensajeEnviarToken.
 			NGMensajeEnviarToken met_recibido = new NGMensajeEnviarToken();
 			// Procesamos el mensaje anteriormente creado("guardamos el token a enviar").
@@ -103,7 +112,9 @@ public class NGServerThread extends Thread {
 			// Creacion del mensaje de respuesta, dicha confirmacion depende de la
 			// verificacion del token.
 			String mensaje_confirmar = mc_enviar.createNGMensajeConfirmar(tokenVerified);
+			System.out.println("TOKEN VERIFICADO: " + tokenVerified);
 			dos.write(mensaje_confirmar.getBytes());
+			
 		}
 	}
 
@@ -111,13 +122,38 @@ public class NGServerThread extends Thread {
 	// duplicated
 	// TODO
 	private void receiveAndVerifyNickname() throws IOException {
+		// Hacer aqui to la pesca
+		System.out.println("LOGEAR1");
 		boolean nickVerified = false;
+		NGPlayerInfo ngp;
 		// this loop runs until the nick provided is not duplicated
 		while (!nickVerified) {
 			// We obtain the nick from the message
 			// we try to add the player in the server manager
 			// if success we send to the client the NICK_OK message
 			// otherwise we send DUPLICATED_NICK
+
+			// Recibir(leemos) por DataInputStream, lo leido lo guardamos en el buffer
+			// arrayBytes.
+			// TODO No le llega ningun nombre, tengo que pillarlo del mensaje
+			byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
+			// TODO es en este dis donde se escribe pero lo del token
+			System.out.println("Hacemos el dis");
+			dis.read(arrayBytes);
+			String s = new String(arrayBytes);
+			// Creamos el mensaje, NGMensajeEnviarNickname.
+			NGMensajeEnviarNickname men_recibido = new NGMensajeEnviarNickname();
+			// Procesamos el mensaje anteriormente creado("guardamos el token a enviar").
+			men_recibido.processNGMensajeEnviarNickname(s);
+			// Creamos el mensaje de confirmacion
+			NGMensajeConfirmar mc_enviar = new NGMensajeConfirmar();
+			ngp = new NGPlayerInfo(men_recibido.getNickname(), 0);
+			// Verificamos el NGPlayerInfo.
+			nickVerified = create(ngp);
+			System.out.println("NGSERVER:" + nickVerified);
+			String mensaje_confirmar = mc_enviar.createNGMensajeConfirmar(nickVerified);
+			dos.write(mensaje_confirmar.getBytes());
+
 		}
 	}
 
@@ -138,5 +174,30 @@ public class NGServerThread extends Thread {
 			// TODO
 		}
 	}
+	
+	// Añadir un player.
+		public boolean create(Object obj) {
+			System.out.println("LOGEAR2" +  obj.toString());
+			boolean nickValido = true;
+			Session session = HibernateUtil.getSessionFactory().openSession();			
+			Transaction trans = null;
+			
+			try {
+				trans = session.beginTransaction();
+				session.save((NGPlayerInfo) obj);
+				session.getTransaction().commit();
+				System.out.println("NICK VALIDO1__: " + nickValido);
+			} catch (RuntimeException e) {
+				if (trans != null) {
+					trans.rollback();
+					nickValido = false;
+					System.err.println("Nick no valido.");
+				}
+			} finally {
+				session.close();
+			}
+			System.out.println("NICK VALIDO3__: " + nickValido);
+			return nickValido;
+		}
 
 }

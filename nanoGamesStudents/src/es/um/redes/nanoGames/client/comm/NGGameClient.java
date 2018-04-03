@@ -9,8 +9,11 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import es.um.redes.nanoGames.broker.BrokerClient;
+import es.um.redes.nanoGames.client.application.NGController;
 import es.um.redes.nanoGames.message.NGMensajeConfirmar;
+import es.um.redes.nanoGames.message.NGMensajeEnviarNickname;
 import es.um.redes.nanoGames.message.NGMensajeEnviarToken;
+import es.um.redes.nanoGames.server.NGPlayerInfo;
 
 //This class provides the functionality required to exchange messages between the client and the game server 
 public class NGGameClient {
@@ -70,8 +73,26 @@ public class NGGameClient {
 
 	public boolean registerNickname(String nick) throws IOException {
 		// SND(nick) and RCV(NICK_OK) or RCV(NICK_DUPLICATED)
-		// TODO
-		return true;
+		// Declaracion del mensaje NGMensajeEnviarNickname.
+		NGMensajeEnviarNickname men_enviar = new NGMensajeEnviarNickname();
+		// Crear el mensaje NGMensajeEnviarNickname, con la confirmacion del nick.
+		String data_to_send = men_enviar.createNGMensajeEnviarNickname(nick);
+		// Enviamos(escribimos) por DataOutputStream.
+		System.out.println("DATA SEND:"+ data_to_send);
+		dos.write(data_to_send.getBytes());
+		// Creacion del buffer con tamaño maximo.
+		byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
+		// Recibir(leemos) por DataInputStream
+		dis.read(arrayBytes);
+		String data_recived = new String(arrayBytes);
+		System.out.println("DATA RECIVE:"+ data_recived);
+		// Declaracion del mensaje, NGMensajeConfirmar.
+		NGMensajeConfirmar mc_recived = new NGMensajeConfirmar();
+		// Procesamos los datos que nos llega.
+		mc_recived.processNGMensajeConfirmar(data_recived);
+		// Devolvemos el valor del campo PARAMETRO.
+		System.out.println("Es confirmado NICK:" + mc_recived.isConfirmated());
+		return mc_recived.isConfirmated();
 	}
 
 	// TODO
