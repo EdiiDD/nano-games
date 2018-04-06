@@ -1,5 +1,6 @@
 package es.um.redes.nanoGames.message;
 
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,14 +27,19 @@ public class NGMensajeListaSalas {
 		return "<mensaje><operacion>"+this.constOperacion+"</operacion><parametro>"+String.valueOf(numSalas)+"</parametro><parametro>"+descrSalas+"</parametro></mensaje>";
 	}
 	
+	// TODO Ver este mensaje, no se 
 	public void processNGMensajeListaSalas(String data) {
 		this.data = data;
 		Matcher mat = pattern.matcher(this.data); 
+		// No hace bien el find
 		if (mat.find()){
 			String s1 = mat.group(2);
 			this.numSalas = Integer.parseInt(s1);
+			System.out.println("NUMSALA: "+ numSalas);
 			String s2 = mat.group(4);
 			this.desSalas = s2.split(" & ");
+			System.out.println("DESALAS: "+ desSalas);
+
 		} 
 		
 	}
@@ -47,6 +53,11 @@ public class NGMensajeListaSalas {
 	}
 	
 	
+	@Override
+	public String toString() {
+		return "NGMensajeListaSalas [numSalas=" + numSalas + ", desSalas=" + Arrays.toString(desSalas) + "]";
+	}
+
 	public static void main(String[] args) {
 		NGMensajeListaSalas mls_emisor = new NGMensajeListaSalas();
 		String datos_emisor = mls_emisor.createNGMensajeListaSalas(2, "Sala 0 - Adivina el numero - 2 jugadores & Sala 1 - TicTacToe - 2 Jugadores ");

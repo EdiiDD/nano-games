@@ -98,6 +98,7 @@ public class NGGameClient {
 
 	public void seeRoomList() {
 		NGMensajeListaSalas mls_recived = new NGMensajeListaSalas();
+		int numSalas = 0;
 		try {
 			// Declaracion del mensaje NGMensajeListaSalas;
 			NGMensajeListarSalas mls_enviar = new NGMensajeListarSalas();
@@ -110,21 +111,25 @@ public class NGGameClient {
 			// Recibir(leemos) por DataInputStream
 			dis.read(arrayBytes);
 			String data_recived = new String(arrayBytes);
+			System.out.println("DIS1: " + data_recived);
 			// Declaracion del mensaje, NGMensajeConfirmar.
 			mls_recived = new NGMensajeListaSalas();
 			// Procesamos los datos que nos llega.
 			mls_recived.processNGMensajeListaSalas(data_recived);
+			System.out.println("DIS: " + mls_recived.toString());
+			numSalas = mls_recived.getNumSalas();
+			System.out.println("MSL_RECIVED: "+mls_recived);
+			
+			System.out.println("Numero de salas: " + numSalas);
+			for (int i = 0; i < numSalas; i++) {
+				System.out.println("Sala " + i + " " + mls_recived.getSala(i));
+			}
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		int numSalas = mls_recived.getNumSalas();
-		System.out.println(mls_recived);
-		System.out.println("Numero de salas: " + numSalas);
-		for (int i = 0; i < numSalas; i++) {
-			System.out.println("Sala " + i + " " + mls_recived.getSala(i));
-		}
+		
 
 	}
 	// TODO
