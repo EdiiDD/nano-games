@@ -15,6 +15,13 @@ public class NGChallenge {
 		this.challengeNumber = currentChallengeNumber;
 		challenge = currentChallenge;
 	}
+
+	@Override
+	public String toString() {
+		return "NGChallenge [challengeNumber=" + challengeNumber + ", challenge=" + challenge + "]";
+	}
+	
+	
 	
 
 }

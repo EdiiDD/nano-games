@@ -55,6 +55,8 @@ public class NGController {
 	private String serverHostname;
 	// Server socket;
 	private DatagramSocket socket;
+	// Solo se puede logear 1 vez.
+	private boolean estaLogeado;
 
 	public NGController(String brokerHostname, String serverHostname) {
 		brokerClient = new BrokerClient(brokerHostname);
@@ -95,7 +97,11 @@ public class NGController {
 			getTokenAndDeliver();
 			break;
 		case NGCommands.COM_NICK:
-			registerNickName();
+			if (!estaLogeado) {
+				registerNickName();
+			}else {
+				System.out.println("Ya estas logeado");
+			}
 			break;
 		case NGCommands.COM_ROOMLIST:
 			// TODO
@@ -127,12 +133,17 @@ public class NGController {
 	}
 
 	private void registerNickName() {
-		// We try to register the nick in the server (it will check for duplicates)
+		// We try to register the nick in the server (it will check for duplicates) 
 		// TODO
 		// We initialize the game client to be used to connect with the name server
-		
+
 		try {
-			ngClient.registerNickname(nickname);
+			if (ngClient.registerNickname(nickname)) {
+				System.out.println("El player " + nickname + " ha sido logeado de forma correcta.");
+				estaLogeado = true;
+			} else {
+				System.out.println("El player " + nickname + " ya esta logeado, intentalo de nuevo con un nuevo nick.");
+			}
 		} catch (IOException e) {
 			System.err.println("Nick no valido.");
 		}
@@ -172,7 +183,12 @@ public class NGController {
 	}
 
 	private void exitTheGame() {
-		// We notify the server that the user is leaving the room
+		// We notify the server that the user is leaving the game.
+		// TODO
+	}
+	
+	private void exitRoomGame() {
+		// We notify the server that the user is leaving the room.
 		// TODO
 	}
 
@@ -210,7 +226,7 @@ public class NGController {
 		if (token != 0) {
 			try {
 				// We initialize the game client to be used to connect with the name server
-				//ngClient = new NGGameClient(serverHostname);
+				// ngClient = new NGGameClient(serverHostname);
 				// We send the token in order to verify it
 				if (!ngClient.verifyToken(token, brokerClient)) {
 					System.out.println("* The token is not valid.");

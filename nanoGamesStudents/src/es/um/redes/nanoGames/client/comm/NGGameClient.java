@@ -78,20 +78,17 @@ public class NGGameClient {
 		// Crear el mensaje NGMensajeEnviarNickname, con la confirmacion del nick.
 		String data_to_send = men_enviar.createNGMensajeEnviarNickname(nick);
 		// Enviamos(escribimos) por DataOutputStream.
-		System.out.println("DATA SEND:"+ data_to_send);
 		dos.write(data_to_send.getBytes());
 		// Creacion del buffer con tamaño maximo.
 		byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
 		// Recibir(leemos) por DataInputStream
 		dis.read(arrayBytes);
 		String data_recived = new String(arrayBytes);
-		System.out.println("DATA RECIVE:"+ data_recived);
 		// Declaracion del mensaje, NGMensajeConfirmar.
 		NGMensajeConfirmar mc_recived = new NGMensajeConfirmar();
 		// Procesamos los datos que nos llega.
 		mc_recived.processNGMensajeConfirmar(data_recived);
 		// Devolvemos el valor del campo PARAMETRO.
-		System.out.println("Es confirmado NICK:" + mc_recived.isConfirmated());
 		return mc_recived.isConfirmated();
 	}
 

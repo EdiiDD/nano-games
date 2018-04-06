@@ -43,6 +43,7 @@ public class NGServerThread extends Thread {
 	NGPlayerInfo player;
 	// Current RoomManager (it depends on the room the user enters)
 	NGRoomManager roomManager;
+	
 	// TODO Add additional fields
 	private static final int MAXIMUM_TCP_SIZE = 65535;
 
@@ -69,7 +70,6 @@ public class NGServerThread extends Thread {
 			// The first step is to receive and to verify the token
 			receiveAndVerifyToken();
 			// The second step is to receive and to verify the nick name
-			System.out.println("VERIFICAR NICKNAME");
 			receiveAndVerifyNickname();
 			// While the connection is alive...
 			while (true) {
@@ -86,7 +86,6 @@ public class NGServerThread extends Thread {
 	// Receive and verify Token (token enviado por el cliente)
 	// TODO
 	private void receiveAndVerifyToken() throws IOException {
-		System.out.println("TOKEAR");
 		boolean tokenVerified = false;
 		while (!tokenVerified) {
 
@@ -99,7 +98,6 @@ public class NGServerThread extends Thread {
 			byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
 			dis.read(arrayBytes);
 			String token_recibido = new String(arrayBytes);
-			System.out.println("NGSERVER TOKEN NAME:"+token_recibido);
 			// Creamos el mensaje, NGMensajeEnviarToken.
 			NGMensajeEnviarToken met_recibido = new NGMensajeEnviarToken();
 			// Procesamos el mensaje anteriormente creado("guardamos el token a enviar").
@@ -112,7 +110,6 @@ public class NGServerThread extends Thread {
 			// Creacion del mensaje de respuesta, dicha confirmacion depende de la
 			// verificacion del token.
 			String mensaje_confirmar = mc_enviar.createNGMensajeConfirmar(tokenVerified);
-			System.out.println("TOKEN VERIFICADO: " + tokenVerified);
 			dos.write(mensaje_confirmar.getBytes());
 			
 		}
@@ -122,8 +119,6 @@ public class NGServerThread extends Thread {
 	// duplicated
 	// TODO
 	private void receiveAndVerifyNickname() throws IOException {
-		// Hacer aqui to la pesca
-		System.out.println("LOGEAR1");
 		boolean nickVerified = false;
 		NGPlayerInfo ngp;
 		// this loop runs until the nick provided is not duplicated
@@ -138,7 +133,6 @@ public class NGServerThread extends Thread {
 			// TODO No le llega ningun nombre, tengo que pillarlo del mensaje
 			byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
 			// TODO es en este dis donde se escribe pero lo del token
-			System.out.println("Hacemos el dis");
 			dis.read(arrayBytes);
 			String s = new String(arrayBytes);
 			// Creamos el mensaje, NGMensajeEnviarNickname.
@@ -150,7 +144,6 @@ public class NGServerThread extends Thread {
 			ngp = new NGPlayerInfo(men_recibido.getNickname(), 0);
 			// Verificamos el NGPlayerInfo.
 			nickVerified = create(ngp);
-			System.out.println("NGSERVER:" + nickVerified);
 			String mensaje_confirmar = mc_enviar.createNGMensajeConfirmar(nickVerified);
 			dos.write(mensaje_confirmar.getBytes());
 
@@ -177,7 +170,6 @@ public class NGServerThread extends Thread {
 	
 	// Añadir un player.
 		public boolean create(Object obj) {
-			System.out.println("LOGEAR2" +  obj.toString());
 			boolean nickValido = true;
 			Session session = HibernateUtil.getSessionFactory().openSession();			
 			Transaction trans = null;
@@ -186,7 +178,6 @@ public class NGServerThread extends Thread {
 				trans = session.beginTransaction();
 				session.save((NGPlayerInfo) obj);
 				session.getTransaction().commit();
-				System.out.println("NICK VALIDO1__: " + nickValido);
 			} catch (RuntimeException e) {
 				if (trans != null) {
 					trans.rollback();
@@ -196,7 +187,6 @@ public class NGServerThread extends Thread {
 			} finally {
 				session.close();
 			}
-			System.out.println("NICK VALIDO3__: " + nickValido);
 			return nickValido;
 		}
 
