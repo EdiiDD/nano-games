@@ -8,7 +8,6 @@ import java.util.Map;
 import com.mysql.cj.api.xdevapi.Collection;
 
 import es.um.redes.nanoGames.server.NGPlayerInfo;
-import javafx.print.Collation;
 
 public class NGRoomAdivinarNumero extends NGRoomManager {
 
@@ -48,10 +47,14 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
 		return null;
 	}
 
+	// Devolvemos todos los challenges de la sala. No se contruye ninguno despues de
+	// conseguir uno,
+	// simplemente se alcanza los indicados en la ROOM.
 	@Override
 	public NGChallenge checkChallenge(NGPlayerInfo p) {
 		// TODO Auto-generated method stub
-
+		// Añadimos a este usuario su nuevo score.
+		mapasChallenge.get(1);
 		return null;
 	}
 
@@ -102,6 +105,7 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
 		return "Tú ganas si adivinas el número en " + NUM_MAX_TRY + " o menos intentos";
 	}
 
+	// Challenges de la sala de juego.
 	private Map<Integer, NGChallenge> crearNGChallenge() {
 		HashMap<Integer, NGChallenge> mapa = new HashMap<Integer, NGChallenge>();
 		NGChallenge adivinarNumero = new NGChallenge(Short.valueOf("1"), "Adivinar el numero en mas de 4 intentos");
@@ -115,14 +119,29 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
 		mapa.put(3, adivinarNumero3Intento);
 		mapa.put(4, adivinarNumero4Intento);
 		mapa.put(5, adivinarNumero);
-		
+		mapa.put(6, adivinarNumero);
+		mapa.put(7, adivinarNumero);
+
 		return mapa;
 	}
 
 	public void printNGChallenge() {
+		System.out.println("\nChallenges de NGRoomAdivinarNumero");
 		for (Integer key : mapasChallenge.keySet()) {
 			System.out.println(mapasChallenge.get(key).toString());
 		}
+	}
+
+	@Override
+	public String toString() {
+		return "NGRoomAdivinarNumero \nRules=" + rules + ""
+				+ "\nDescription=" + description;
+	}
+	
+	public void imprimirTodo() {
+		System.out.println(this.toString());
+		printNGChallenge();
+		
 	}
 
 }

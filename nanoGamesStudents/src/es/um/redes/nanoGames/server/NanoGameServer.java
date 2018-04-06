@@ -4,6 +4,11 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
+
+import es.um.redes.nanoGames.server.roomManager.NGRoomAdivinarNumero;
+import es.um.redes.nanoGames.server.roomManager.NGRoomManager;
 
 public class NanoGameServer implements Runnable {
 
@@ -14,7 +19,9 @@ public class NanoGameServer implements Runnable {
     private NGServerManager manager;
     
     private static String brokerHostname;
-
+    protected static Map<Integer, NGRoomManager> salasServidor;
+    
+    
     public static NanoGameServer create(int port)
     {
     	return new NanoGameServer(new InetSocketAddress(port));
@@ -23,6 +30,12 @@ public class NanoGameServer implements Runnable {
     private NanoGameServer(InetSocketAddress a)
     {
     	this.socketAddress = a;
+    	NanoGameServer.salasServidor = new HashMap<Integer,NGRoomManager>();
+    	// Añadimos las salas de nuestro servidor de juegos.
+    	NGRoomAdivinarNumero an = new NGRoomAdivinarNumero();
+    	NanoGameServer.salasServidor.put(1, an);
+    	//((NGRoomAdivinarNumero)NanoGameServer.salasServidor.get(1)).imprimirTodo();
+    	
     	//This will be the Status shared among all the Threads
     	// manager = new NGServerManager();
     	//TODO We add one manager for each game we have implemented

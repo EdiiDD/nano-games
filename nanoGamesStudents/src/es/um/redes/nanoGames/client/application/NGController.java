@@ -104,7 +104,7 @@ public class NGController {
 			}
 			break;
 		case NGCommands.COM_ROOMLIST:
-			// TODO
+			getRoomList();
 			break;
 		case NGCommands.COM_ENTER:
 			// TODO
@@ -125,6 +125,11 @@ public class NGController {
 			break;
 		default:
 		}
+	}
+
+	private void getRoomList() {
+		ngClient.seeRoomList();
+		
 	}
 
 	private void getAndShowRooms() {

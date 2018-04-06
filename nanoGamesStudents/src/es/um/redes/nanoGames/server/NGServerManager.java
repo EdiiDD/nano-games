@@ -29,9 +29,10 @@ class NGServerManager {
 	//}
 	
 	//Given a room it returns the description
-	public synchronized String getRoomDescription(room) {
+	public synchronized String getRoomDescription(NGRoomManager ngrm) {
 		//We make use of the RoomManager to obtain an updated description of the room
 		return rooms.get(room).getDescription();
+		return ngrm.getDescription();
 	}
 	
 	//False is returned if the nickname is already registered, True otherwise and the player is registered
@@ -45,10 +46,10 @@ class NGServerManager {
 	}
 	
 	//A player request to enter in a room. If the access is granted the RoomManager is returned
-	public synchronized NGRoomManager enterRoom(NGPlayerInfo p, room) {
+	public synchronized NGRoomManager enterRoom(NGPlayerInfo p, NGRoomManager ngrm) {
 		//TODO Check if the room exists
-		if (roomManager.registerPlayer(p)) {
-				return rm;
+		if (ngrm.registerPlayer(p)) {
+				return ngrm;
 		}
 		else
 			return null;

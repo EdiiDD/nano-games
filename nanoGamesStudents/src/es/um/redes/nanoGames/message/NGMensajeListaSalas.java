@@ -46,6 +46,7 @@ public class NGMensajeListaSalas {
 		return this.desSalas[i];
 	}
 	
+	
 	public static void main(String[] args) {
 		NGMensajeListaSalas mls_emisor = new NGMensajeListaSalas();
 		String datos_emisor = mls_emisor.createNGMensajeListaSalas(2, "Sala 0 - Adivina el numero - 2 jugadores & Sala 1 - TicTacToe - 2 Jugadores ");

@@ -8,11 +8,15 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import org.omg.CORBA.DATA_CONVERSION;
+
 import es.um.redes.nanoGames.broker.BrokerClient;
 import es.um.redes.nanoGames.client.application.NGController;
 import es.um.redes.nanoGames.message.NGMensajeConfirmar;
 import es.um.redes.nanoGames.message.NGMensajeEnviarNickname;
 import es.um.redes.nanoGames.message.NGMensajeEnviarToken;
+import es.um.redes.nanoGames.message.NGMensajeListaSalas;
+import es.um.redes.nanoGames.message.NGMensajeListarSalas;
 import es.um.redes.nanoGames.server.NGPlayerInfo;
 
 //This class provides the functionality required to exchange messages between the client and the game server 
@@ -92,6 +96,37 @@ public class NGGameClient {
 		return mc_recived.isConfirmated();
 	}
 
+	public void seeRoomList() {
+		NGMensajeListaSalas mls_recived = new NGMensajeListaSalas();
+		try {
+			// Declaracion del mensaje NGMensajeListaSalas;
+			NGMensajeListarSalas mls_enviar = new NGMensajeListarSalas();
+			// Crear el mensaje NGMensajeListaSalas, con la lista de las salas.
+			String data_to_send = mls_enviar.createNGMensajeListarSalas();
+			// Enviamos(escribimos) por DataOutPutSream.
+			dos.write(data_to_send.getBytes());
+			// Creacion del buffer con tamaño maximo-
+			byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
+			// Recibir(leemos) por DataInputStream
+			dis.read(arrayBytes);
+			String data_recived = new String(arrayBytes);
+			// Declaracion del mensaje, NGMensajeConfirmar.
+			mls_recived = new NGMensajeListaSalas();
+			// Procesamos los datos que nos llega.
+			mls_recived.processNGMensajeListaSalas(data_recived);
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		int numSalas = mls_recived.getNumSalas();
+		System.out.println(mls_recived);
+		System.out.println("Numero de salas: " + numSalas);
+		for (int i = 0; i < numSalas; i++) {
+			System.out.println("Sala " + i + " " + mls_recived.getSala(i));
+		}
+
+	}
 	// TODO
 	// add additional methods for all the messages to be exchanged between client
 	// and game server
@@ -105,4 +140,5 @@ public class NGGameClient {
 	public void disconnect() {
 		// TODO
 	}
+
 }

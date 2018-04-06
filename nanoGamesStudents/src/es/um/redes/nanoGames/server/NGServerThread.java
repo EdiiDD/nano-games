@@ -13,6 +13,8 @@ import es.um.redes.nanoGames.client.application.NGController;
 import es.um.redes.nanoGames.message.NGMensajeConfirmar;
 import es.um.redes.nanoGames.message.NGMensajeEnviarNickname;
 import es.um.redes.nanoGames.message.NGMensajeEnviarToken;
+import es.um.redes.nanoGames.message.NGMensajeListaSalas;
+import es.um.redes.nanoGames.message.NGMensajeListarSalas;
 import es.um.redes.nanoGames.server.roomManager.NGRoomManager;
 import es.um.redes.nanoGames.utils.HibernateUtil;
 
@@ -73,7 +75,8 @@ public class NGServerThread extends Thread {
 			receiveAndVerifyNickname();
 			// While the connection is alive...
 			while (true) {
-				// TODO Rest of messages according to the automata
+				sendRoomList();
+				
 			}
 		} catch (Exception e) {
 			// If an error occurs with the communications the user is removed from all the
@@ -155,6 +158,22 @@ public class NGServerThread extends Thread {
 	private void sendRoomList() throws IOException {
 		// The room list is obtained from the server manager
 		// Then we build all the required data to send the message to the client
+		byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
+		dis.read(arrayBytes);
+		String s = new String(arrayBytes);
+		NGMensajeListarSalas mls_recibido = new NGMensajeListarSalas();
+		mls_recibido.processNGMensajeListarSalas(s);
+		int numSalas = NanoGameServer.salasServidor.size();
+		String descripcionSalas = "";
+		for (Integer rm : NanoGameServer.salasServidor.keySet()) {
+			descripcionSalas +=NanoGameServer.salasServidor.get(rm);
+		}
+		NGMensajeListaSalas mls_enviar = new NGMensajeListaSalas();
+		String listaSalas = mls_enviar.createNGMensajeListaSalas(numSalas, descripcionSalas);
+		System.out.println("Enviamos de roomList: "+listaSalas);
+		dos.write(listaSalas.getBytes());
+		
+		
 	}
 
 	// Method to process messages received when the player is in the room

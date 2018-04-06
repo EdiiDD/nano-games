@@ -18,7 +18,7 @@ public class NGChallenge {
 
 	@Override
 	public String toString() {
-		return "NGChallenge [challengeNumber=" + challengeNumber + ", challenge=" + challenge + "]";
+		return "[pointsChallenge=" + challengeNumber + " challenge=" + challenge + "]\n";
 	}
 	
 	
