@@ -24,7 +24,8 @@ public class NGMensajeListaSalas {
 	 * @return
 	 */
 	public String createNGMensajeListaSalas(int numSalas, String descrSalas) {
-		return "<mensaje><operacion>"+this.constOperacion+"</operacion><parametro>"+String.valueOf(numSalas)+"</parametro><parametro>"+descrSalas+"</parametro></mensaje>";
+		return "<mensaje><operacion>"+this.constOperacion+"</operacion><parametro>"+String.valueOf(numSalas)+"</parametro>"
+																	+ "<parametro>"+descrSalas+"</parametro></mensaje>";
 	}
 	
 	// TODO Ver este mensaje, no se 

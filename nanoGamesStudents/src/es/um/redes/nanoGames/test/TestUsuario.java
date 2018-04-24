@@ -33,7 +33,7 @@ public class TestUsuario {
 
 	}
 
-	public static void añadirProfesor(NGPlayerInfo player) {
+	public static void anadirProfesor(NGPlayerInfo player) {
 		
 		Session session= HibernateUtil.getSessionFactory().openSession();
 		Transaction trans = null;
@@ -71,7 +71,7 @@ public class TestUsuario {
 			score = s.nextInt();
 			
 			NGPlayerInfo p = new NGPlayerInfo(nick, score);
-			añadirProfesor(p);
+			anadirProfesor(p);
 			imprimirTodo();
 			
 

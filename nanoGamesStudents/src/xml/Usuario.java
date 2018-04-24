@@ -11,8 +11,8 @@ public class Usuario {
 	public void setNombreUsuario(String nombreUsuario) {
 		this.nombreUsuario = nombreUsuario;
 	}
-	
-	public void setContraseña(String password) {
+
+	public void setContrasena(String password) {
 		this.password = password;
 	}
 	
@@ -20,7 +20,7 @@ public class Usuario {
 		return this.nombreUsuario;
 	}
 	
-	public String getContraseña() {
+	public String getContrasena() {
 		return this.password;
 	}	
 }

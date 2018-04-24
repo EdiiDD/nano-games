@@ -85,7 +85,7 @@ public class NGPlayerInfo {
 		return "NGPlayerInfo [nick=" + nick + ", status=" + status + ", score=" + score + "]";
 	}
 
-	public void añadirNGPlayer() {
+	public void anadirNGPlayer() {
 		NanoGame.manager.getTransaction().begin();
 		NanoGame.manager.persist(this);
 		NanoGame.manager.getTransaction().commit();

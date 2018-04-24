@@ -98,20 +98,20 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
 	}
 
 	private String rulesRoom() {
-		return "El servidor ha pensado un numero aleatorio entre 1 y 20, y tienes que adivinarlo.El servidor te dirá si cada intento es muy alto o muy bajo.";
+		return "El servidor ha pensado un numero aleatorio entre 1 y 20, y tienes que adivinarlo.El servidor te dira si cada intento es muy alto o muy bajo.";
 	}
 
 	private String descriptionRoom() {
-		return "Tú ganas si adivinas el número en " + NUM_MAX_TRY + " o menos intentos";
+		return "Ganas si adivinas el numero en " + NUM_MAX_TRY + " o menos intentos";
 	}
 
 	// Challenges de la sala de juego.
 	private Map<Integer, NGChallenge> crearNGChallenge() {
 		HashMap<Integer, NGChallenge> mapa = new HashMap<Integer, NGChallenge>();
 		NGChallenge adivinarNumero = new NGChallenge(Short.valueOf("1"), "Adivinar el numero en mas de 4 intentos");
-		NGChallenge adivinarNumero4Intento = new NGChallenge(Short.valueOf("2"), "Adivinar el numero al 4º intento");
-		NGChallenge adivinarNumero3Intento = new NGChallenge(Short.valueOf("3"), "Adivinar el numero al 3º intento");
-		NGChallenge adivinarNumero2Intento = new NGChallenge(Short.valueOf("4"), "Adivinar el numero al 2º intento");
+		NGChallenge adivinarNumero4Intento = new NGChallenge(Short.valueOf("2"), "Adivinar el numero al cuarto intento");
+		NGChallenge adivinarNumero3Intento = new NGChallenge(Short.valueOf("3"), "Adivinar el numero al tercer intento");
+		NGChallenge adivinarNumero2Intento = new NGChallenge(Short.valueOf("4"), "Adivinar el numero al segundo intento");
 		NGChallenge adivinarNumeroAlaPrimera = new NGChallenge(Short.valueOf("5"), "Adivinar el numero a la primera");
 
 		mapa.put(1, adivinarNumeroAlaPrimera);

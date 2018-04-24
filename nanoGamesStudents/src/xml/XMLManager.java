@@ -44,10 +44,10 @@ public class XMLManager{
 	
 	public static void main(String[] args) {
 		Usuario u = new Usuario();
-		u.setContraseña("u2");
+		u.setContrasena("u2");
 		u.setNombreUsuario("u1");
 		Usuario v = new Usuario();
-		v.setContraseña("v2");
+		v.setContrasena("v2");
 		v.setNombreUsuario("v1");
 		ListaUsuarios lu = new ListaUsuarios(); 
 		ArrayList<Usuario> alu = new ArrayList<Usuario>();
@@ -59,7 +59,7 @@ public class XMLManager{
 		ListaUsuarios lu_deserialized = DeserializeListaUsuariosFromXML(USER_DATABASE);
 		for (int i=0; i<lu_deserialized.getDatabase().size(); i++) {
 			System.out.println(lu_deserialized.getDatabase().get(i).getNombreUsuario());
-			System.out.println("\t"+lu_deserialized.getDatabase().get(i).getContraseña());
+			System.out.println("\t"+lu_deserialized.getDatabase().get(i).getContrasena());
 		}
 	}
 }
