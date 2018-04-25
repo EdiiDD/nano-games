@@ -35,10 +35,8 @@ public class NGMensajeListaSalas {
 		if (mat.find()){
 			String s1 = mat.group(2);
 			this.numSalas = Integer.parseInt(s1);
-			System.out.println("NUMSALA: "+ numSalas);
 			String s2 = mat.group(4);
 			this.desSalas = s2.split(" & ");
-			System.out.println("DESALAS: "+ desSalas);
 
 		} 
 		

@@ -12,13 +12,15 @@ import es.um.redes.nanoGames.server.roomManager.NGRoomManager;
 class NGServerManager {
 
     // Players registered in this server, Key-> String Value-> NGPlayerInfo
-    private HashMap<String, NGPlayerInfo> players = new HashMap<String, NGPlayerInfo>();
-    private Map<Integer, NGRoomManager> salasServidor = new HashMap<Integer, NGRoomManager>();
+    private HashMap<String, NGPlayerInfo> players;
+    private Map<Integer, NGRoomManager> salasServidor;
     // Current rooms and their related RoomManagers
     // TODO Data structure to relate rooms and RoomManagers
 
     NGServerManager() {
         // Dar de alta las salas que existirán por defecto
+        players = new HashMap<>();
+        salasServidor = new HashMap<>();
         salasServidor.put(1, new NGRoomAdivinarNumero());
     }
 

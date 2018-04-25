@@ -97,7 +97,7 @@ public class NGController {
                 getRoomList();
                 break;
             case NGCommands.COM_ENTER:
-                // TODO
+                enterTheRoom();
                 break;
             case NGCommands.COM_HELP:
                 NGCommands.printCommandsHelp();
@@ -110,6 +110,10 @@ public class NGController {
                 break;
             default:
         }
+    }
+
+    private void enterTheRoom() {
+        ngClient.enterTheRoom(Integer.valueOf(room));
     }
 
     private void getRoomList() {
@@ -129,10 +133,10 @@ public class NGController {
 
         try {
             if (ngClient.registerNickname(nickname)) {
-                System.out.println("El player " + nickname + " ha sido logeado de forma correcta.");
+                System.out.println("El jugador " + nickname + " ha sido logeado de forma correcta.");
                 estaLogeado = true;
             } else {
-                System.out.println("El player " + nickname + " ya esta logeado, intentalo de nuevo con un nuevo nick.");
+                System.out.println("El jugador " + nickname + " ya esta logeado, intentalo de nuevo con un nuevo nick.");
             }
         } catch (IOException e) {
             System.err.println("Nick no valido.");

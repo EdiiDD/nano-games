@@ -50,8 +50,8 @@ public class NGServerThread extends Thread {
             // TODO Auto-generated catch block
             System.out.println("Either the dis or the dos couldn't be made.");
         }
-        this.brokerClient = new BrokerClient(brokerHostname); // el brokerClient uno nuevo con ese nombre
-        this.serverManager = manager; // el manager del server, pues ese
+        this.brokerClient = new BrokerClient(brokerHostname);
+        this.serverManager = manager;
 
     }
 
@@ -68,6 +68,7 @@ public class NGServerThread extends Thread {
             // While the connection is alive...
             while (true) {
                 sendRoomList();
+                enterTheRoom();
 
             }
         } catch (Exception e) {
@@ -131,14 +132,13 @@ public class NGServerThread extends Thread {
             String s = new String(arrayBytes);
             NGMensajeEnviarNickname men_recibido = new NGMensajeEnviarNickname();
             men_recibido.processNGMensajeEnviarNickname(s);
-            System.out.println("Recibe S: " + men_recibido);
-
             NGMensajeConfirmar mc_enviar = new NGMensajeConfirmar();
+
             player = new NGPlayerInfo(men_recibido.getNickname(), 0);
             nickVerified = serverManager.addPlayer(player);
+
             String mensaje_confirmar = mc_enviar.createNGMensajeConfirmar(nickVerified);
-            System.out.println("Envia S: " + mensaje_confirmar);
-            System.out.println("El jugador " + player.getNick() + " se ha registrado en la sala");
+            System.out.println("*El jugador " + player.getNick() + " se ha registrado en el servidor");
             dos.write(mensaje_confirmar.getBytes());
 
         }
@@ -160,14 +160,38 @@ public class NGServerThread extends Thread {
         String descripcionSalas = "";
 
         for (Integer rm : serverManager.getSalasServidor().keySet()) {
-            descripcionSalas += serverManager.getSalasServidor().get(rm);
-            // El & sirve para poder procesar la cadena y obtener las distintas descrpciones
-            // de salas.
+            descripcionSalas += serverManager.getSalasServidor().get(rm).toString();
             descripcionSalas += " & ";
         }
         NGMensajeListaSalas mls_enviar = new NGMensajeListaSalas();
         String listaSalas = mls_enviar.createNGMensajeListaSalas(numSalas, descripcionSalas);
         dos.write(listaSalas.getBytes());
+
+    }
+
+    private void enterTheRoom() {
+
+        boolean sePuedeEntrar = false;
+        try {
+            byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
+            dis.read(arrayBytes);
+            String s = new String(arrayBytes);
+
+            NGMensajeEntrarSala mensajeEntrarSalaRecibido = new NGMensajeEntrarSala();
+            mensajeEntrarSalaRecibido.processNGMensajeEntrarSala(s);
+
+            roomManager = serverManager.getSalasServidor().get(mensajeEntrarSalaRecibido.getNumSala());
+            if(serverManager.enterRoom(player, roomManager) != null){
+                System.out.println("*El jugador " + player.getNick() + " ha entrada a la sala " + roomManager.getRegistrationName());
+                sePuedeEntrar = true;
+            }
+            NGMensajeConfirmar mensajeConfirmarEnviar = new NGMensajeConfirmar();
+            String confirmarSala = mensajeConfirmarEnviar.createNGMensajeConfirmar(sePuedeEntrar);
+            dos.write(confirmarSala.getBytes());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
