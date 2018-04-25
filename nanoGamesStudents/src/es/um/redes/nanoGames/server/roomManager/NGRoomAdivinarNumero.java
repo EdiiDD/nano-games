@@ -1,11 +1,8 @@
 package es.um.redes.nanoGames.server.roomManager;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-import com.mysql.cj.api.xdevapi.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import es.um.redes.nanoGames.server.NGPlayerInfo;
 

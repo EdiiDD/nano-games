@@ -77,10 +77,12 @@ public class NGGameClient {
 
 	public boolean registerNickname(String nick) throws IOException {
 		// SND(nick) and RCV(NICK_OK) or RCV(NICK_DUPLICATED)
+
 		// Declaracion del mensaje NGMensajeEnviarNickname.
 		NGMensajeEnviarNickname men_enviar = new NGMensajeEnviarNickname();
 		// Crear el mensaje NGMensajeEnviarNickname, con la confirmacion del nick.
 		String data_to_send = men_enviar.createNGMensajeEnviarNickname(nick);
+		System.out.println("Envio C: " + data_to_send);
 		// Enviamos(escribimos) por DataOutputStream.
 		dos.write(data_to_send.getBytes());
 		// Creacion del buffer con tamaño maximo.
@@ -93,6 +95,7 @@ public class NGGameClient {
 		// Procesamos los datos que nos llega.
 		mc_recived.processNGMensajeConfirmar(data_recived);
 		// Devolvemos el valor del campo PARAMETRO.
+		System.out.println("Recibo C: " + mc_recived);
 		return mc_recived.isConfirmated();
 	}
 
