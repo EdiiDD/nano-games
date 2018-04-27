@@ -78,8 +78,7 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
 
     @Override
     public void removePlayer(NGPlayerInfo p) {
-        // TODO Auto-generated method stub
-
+        jugadoresSala.remove(p);
     }
 
     @Override

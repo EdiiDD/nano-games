@@ -97,7 +97,7 @@ public class NGController {
                 getRoomList();
                 break;
             case NGCommands.COM_ENTER:
-                enterTheRoom();
+                enterTheGame();
                 break;
             case NGCommands.COM_HELP:
                 NGCommands.printCommandsHelp();
@@ -112,8 +112,8 @@ public class NGController {
         }
     }
 
-    private void enterTheRoom() {
-        ngClient.enterTheRoom(Integer.valueOf(room));
+    private boolean enterTheRoom() {
+        return ngClient.enterTheRoom(Integer.valueOf(room));
     }
 
     private void getRoomList() {
@@ -146,7 +146,7 @@ public class NGController {
 
     private void enterTheGame() {
         // The users request to enter in the room
-        // TODO
+        enterTheRoom();
         // If success, we change the state in order to accept new commands
         do {
             // We will only accept commands related to a room
@@ -158,13 +158,13 @@ public class NGController {
     private void processGameCommand() {
         switch (currentCommand) {
             case NGCommands.COM_RULES:
-                // TODO
+                sendRules();
                 break;
             case NGCommands.COM_STATUS:
                 // TODO
                 break;
             case NGCommands.COM_ANSWER:
-                // TODO
+                sendAnswer();
                 break;
             case NGCommands.COM_SOCKET_IN:
                 // In this case the user did not provide a command but an incoming message was
@@ -172,8 +172,12 @@ public class NGController {
                 processGameMessage();
                 break;
             case NGCommands.COM_EXIT:
-                // TODO
+                exitRoomGame();
         }
+    }
+
+    private void sendRules() {
+        ngClient.sendRules();
     }
 
     private void exitTheGame() {
@@ -184,11 +188,13 @@ public class NGController {
     private void exitRoomGame() {
         // We notify the server that the user is leaving the room.
         // TODO
+        ngClient.exitRoomGame();
     }
 
     private void sendAnswer() {
         // In case we have to send an answer we will wait for the response to display it
         // TODO
+        ngClient.sendAnswer(answer);
     }
 
     private void processGameMessage() {

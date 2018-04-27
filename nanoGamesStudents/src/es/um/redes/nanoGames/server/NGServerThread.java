@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.List;
 
 
 import es.um.redes.nanoGames.broker.BrokerClient;
@@ -37,6 +38,8 @@ public class NGServerThread extends Thread {
     NGPlayerInfo player;
     // Current RoomManager (it depends on the room the user enters)
     NGRoomManager roomManager;
+    // Current RoomManager;
+    private int numSalaActual;
 
     // TODO Add additional fields
     private static final int MAXIMUM_TCP_SIZE = 65535;
@@ -67,10 +70,15 @@ public class NGServerThread extends Thread {
             receiveAndVerifyNickname();
             // While the connection is alive...
             while (true) {
+                // Pedimos la lista de salas
                 sendRoomList();
+                // Entramos a una sala
                 enterTheRoom();
+                // Dentro de la sala
+                processRoomMessages();
 
             }
+
         } catch (Exception e) {
             // If an error occurs with the communications the user is removed from all the
             // managers and the connection is closed
@@ -79,7 +87,7 @@ public class NGServerThread extends Thread {
 
         }
         // TODO Close the socket
-
+        exitRoomGame();
 
     }
 
@@ -171,6 +179,8 @@ public class NGServerThread extends Thread {
 
     private void enterTheRoom() {
 
+        NGMensajeConfirmar mensajeConfirmarEnviar = new NGMensajeConfirmar();
+        String confirmarSala;
         boolean sePuedeEntrar = false;
         try {
             byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
@@ -181,14 +191,54 @@ public class NGServerThread extends Thread {
             mensajeEntrarSalaRecibido.processNGMensajeEntrarSala(s);
 
             roomManager = serverManager.getSalasServidor().get(mensajeEntrarSalaRecibido.getNumSala());
-            if(serverManager.enterRoom(player, roomManager) != null){
+            if (serverManager.enterRoom(player, roomManager, mensajeEntrarSalaRecibido.getNumSala()) != null) {
                 System.out.println("*El jugador " + player.getNick() + " ha entrada a la sala " + roomManager.getRegistrationName());
+                this.numSalaActual = mensajeEntrarSalaRecibido.getNumSala();
                 sePuedeEntrar = true;
+            } else {
+                System.out.println("*El jugador " + player.getNick() + " no puede entrar a la sala ");
+
             }
-            NGMensajeConfirmar mensajeConfirmarEnviar = new NGMensajeConfirmar();
-            String confirmarSala = mensajeConfirmarEnviar.createNGMensajeConfirmar(sePuedeEntrar);
+
+            confirmarSala = mensajeConfirmarEnviar.createNGMensajeConfirmar(sePuedeEntrar);
             dos.write(confirmarSala.getBytes());
 
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+    // Method to process messages received when the player is in the room
+    // TODO
+    private void processRoomMessages() throws IOException {
+        // First we send the rules and the initial status
+        // Now we check for incoming messages, status updates and new challenges
+        System.out.println("Dentro del juego");
+        boolean exit = false;
+        while (!exit) {
+            // TODO
+
+            exit = exitRoomGame();
+        }
+    }
+
+    private void getRules() {
+
+        try {
+            byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
+            dis.read(arrayBytes);
+            String s = new String(arrayBytes);
+
+            NGMensajeListarSalas mls_recibido = new NGMensajeListarSalas();
+            mls_recibido.processNGMensajeListarSalas(s);
+
+            String reglas = roomManager.getRules();
+
+            NGMensajeListaSalas mls_enviar = new NGMensajeListaSalas();
+            String listaSalas = mls_enviar.createNGMensajeListaSalas(0, reglas);
+            dos.write(listaSalas.getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -222,14 +272,26 @@ public class NGServerThread extends Thread {
 
     }
 
-    // Method to process messages received when the player is in the room
-    // TODO
-    private void processRoomMessages() throws IOException {
-        // First we send the rules and the initial status
-        // Now we check for incoming messages, status updates and new challenges
-        boolean exit = false;
-        while (!exit) {
-            // TODO
+    private boolean exitRoomGame() {
+        System.out.println("Salir Sala");
+        try {
+            byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
+            dis.read(arrayBytes);
+            String s = new String(arrayBytes);
+            System.out.println("S recibe: " + s);
+            NGMensajeSalirSala mssRecibido = new NGMensajeSalirSala();
+            mssRecibido.processNGMensajeSalirSala(s);
+            boolean salirSala = serverManager.leaveRoom(player,roomManager,numSalaActual);
+            NGMensajeConfirmar mccEnviar = new NGMensajeConfirmar();
+            String datosEnviar = mccEnviar.createNGMensajeConfirmar(salirSala);
+            System.out.println("S envia: " + datosEnviar);
+            dos.write(datosEnviar.getBytes());
+            return salirSala;
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+        return false;
     }
 }

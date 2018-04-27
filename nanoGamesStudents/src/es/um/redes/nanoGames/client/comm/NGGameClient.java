@@ -9,7 +9,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import es.um.redes.nanoGames.message.*;
-import org.omg.CORBA.DATA_CONVERSION;
 
 import es.um.redes.nanoGames.broker.BrokerClient;
 
@@ -21,6 +20,7 @@ public class NGGameClient {
 
     private static final int SERVER_PORT = 6969;
     private static final int MAXIMUM_TCP_SIZE = 65535;
+    private int numSalaActual;
 
     public NGGameClient(String serverName) {
         // Creation of the socket and streams
@@ -132,7 +132,7 @@ public class NGGameClient {
         // TODO
     }
 
-    public void enterTheRoom(int numSala) {
+    public boolean enterTheRoom(int numSala) {
 
 
         try {
@@ -149,15 +149,64 @@ public class NGGameClient {
 
             if (mensajeConfirmarRecibido.isConfirmated()) {
                 System.out.println("Has entrado a la sala " + numSala);
+                numSalaActual = numSala;
             } else {
-                System.out.println("La sala esta llena, prueba dentro de unos minutos.");
+                System.out.println("No se puede entrar a la sala, prueba dentro de unos minutos.");
             }
-
-
+            return mensajeConfirmarRecibido.isConfirmated();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
+        return false;
+    }
 
+
+    public void sendAnswer(String answer) {
+
+    }
+
+    public void sendRules() {
+        NGMensajeListaSalas mls_recived = new NGMensajeListaSalas();
+        try {
+            NGMensajeListarSalas mls_enviar = new NGMensajeListarSalas();
+            String data_to_send = mls_enviar.createNGMensajeListarSalas();
+            dos.write(data_to_send.getBytes());
+
+            byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
+            dis.read(arrayBytes);
+            String data_recived = new String(arrayBytes);
+            mls_recived = new NGMensajeListaSalas();
+            mls_recived.processNGMensajeListaSalas(data_recived);
+            System.out.println(mls_recived.getSala(0));
+
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+    }
+
+    public void exitRoomGame() {
+
+        try {
+            NGMensajeSalirSala mssEnviar = new NGMensajeSalirSala();
+            String datosEnvia = mssEnviar.createNGMensajeSalirSala();
+            System.out.println("C envia: " + datosEnvia);
+            dos.write(datosEnvia.getBytes());
+
+            byte[] arraybytes = new byte[MAXIMUM_TCP_SIZE];
+            dis.read(arraybytes);
+            String datosRecibidos = new String(arraybytes);
+            NGMensajeConfirmar mcRecibido = new NGMensajeConfirmar();
+            mcRecibido.processNGMensajeConfirmar(datosRecibidos);
+            System.out.println("C recibe: " + datosRecibidos);
+            if(mcRecibido.isConfirmated()){
+                System.out.println("Has salido de la sala");
+            }
+            else System.out.println("No has poodido salir de la sala");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

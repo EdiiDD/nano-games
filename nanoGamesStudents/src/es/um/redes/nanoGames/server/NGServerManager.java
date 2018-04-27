@@ -21,6 +21,7 @@ class NGServerManager {
         // Dar de alta las salas que existirán por defecto
         players = new HashMap<>();
         salasServidor = new HashMap<>();
+        // Sala disponibles en el servidor.
         salasServidor.put(1, new NGRoomAdivinarNumero());
     }
 
@@ -58,18 +59,22 @@ class NGServerManager {
 
     // A player request to enter in a room. If the access is granted the RoomManager
     // is returned
-    public synchronized NGRoomManager enterRoom(NGPlayerInfo p, NGRoomManager ngrm) {
+    public synchronized NGRoomManager enterRoom(NGPlayerInfo p, NGRoomManager ngrm, int numSala) {
         // TODO Check if the room exists
-        if (ngrm.registerPlayer(p)) {
+        if (ngrm.registerPlayer(p) & salasServidor.containsKey(numSala)) {
             return ngrm;
         } else
             return null;
     }
 
     // A player leaves the room
-    public synchronized void leaveRoom(NGPlayerInfo p, byte room) {
+    public synchronized boolean leaveRoom(NGPlayerInfo p, NGRoomManager ngrm, int numSala) {
         // TODO Check if the room exists
-        // room.removePlayer(p);
+        if(salasServidor.containsKey(numSala)){
+            ngrm.removePlayer(p);
+            return  true;
+        }
+        return  false;
     }
 
     public HashMap<String, NGPlayerInfo> getPlayers() {
