@@ -96,6 +96,11 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
 	public int playersInRoom() {
 		return numJugadores;
 	}
+	
+	@Override 
+	public int maxPlayersInRoom() {
+		return NUM_MAX_PLAYER;
+	}
 
 	private String rulesRoom() {
 		return "El servidor ha pensado un numero aleatorio entre 1 y 20, y tienes que adivinarlo.El servidor te dira si cada intento es muy alto o muy bajo.";

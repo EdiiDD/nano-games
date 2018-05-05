@@ -13,10 +13,13 @@ import org.omg.CORBA.DATA_CONVERSION;
 import es.um.redes.nanoGames.broker.BrokerClient;
 import es.um.redes.nanoGames.client.application.NGController;
 import es.um.redes.nanoGames.message.NGMensajeConfirmar;
+import es.um.redes.nanoGames.message.NGMensajeEntrarSala;
 import es.um.redes.nanoGames.message.NGMensajeEnviarNickname;
 import es.um.redes.nanoGames.message.NGMensajeEnviarToken;
 import es.um.redes.nanoGames.message.NGMensajeListaSalas;
 import es.um.redes.nanoGames.message.NGMensajeListarSalas;
+import es.um.redes.nanoGames.message.NGMensajePregunta;
+import es.um.redes.nanoGames.message.NGMensajeRespuesta;
 import es.um.redes.nanoGames.server.NGPlayerInfo;
 
 //This class provides the functionality required to exchange messages between the client and the game server 
@@ -144,6 +147,34 @@ public class NGGameClient {
 	// To close the communication with the server
 	public void disconnect() {
 		// TODO
+	}
+	
+	public boolean sendJoinToRoom(String room) throws IOException {
+		NGMensajeEntrarSala entrar_Sala = new NGMensajeEntrarSala();
+		String data_to_send = entrar_Sala.createNGMensajeEntrarSala(Integer.parseInt(room));
+		this.dos.write(data_to_send.getBytes());
+		byte[] array_bytes = new byte[MAXIMUM_TCP_SIZE];
+		this.dis.read(array_bytes);
+		String data_recived = new String(array_bytes);
+		NGMensajeConfirmar confirmacion = new NGMensajeConfirmar();
+		confirmacion.processNGMensajeConfirmar(data_recived);
+		return confirmacion.isConfirmated();
+	}
+
+	
+	public boolean sendAnswer(String number) throws IOException {
+		//Para enviar una respuesta se debe: enviar la respuesta y recibir una pregunta, y si la pregunta tiene un fin evolver true o false
+		NGMensajeRespuesta respuesta = new NGMensajeRespuesta();
+		String data_to_send = respuesta.createNGMensajeRespuesta(number);
+		this.dos.write(data_to_send.getBytes());
+		//ahora esperamos la respuesta del server, llegará cuando este hilo y los demas vean que en la estructura static tiene X mensajes
+		//que seran multiplo de el numero de jugadores
+		byte[] array_bytes = new byte[MAXIMUM_TCP_SIZE];
+		this.dis.read(array_bytes);
+		NGMensajePregunta pregunta_recibida = new NGMensajePregunta();
+		String dataRecived = new String(array_bytes);
+		pregunta_recibida.processNGMensajePregunta(dataRecived);
+		return pregunta_recibida.getEsFin();
 	}
 
 }

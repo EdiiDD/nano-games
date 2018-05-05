@@ -1,6 +1,8 @@
 package es.um.redes.nanoGames.client.application;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.DatagramSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -15,6 +17,7 @@ import es.um.redes.nanoGames.broker.BrokerClient;
 import es.um.redes.nanoGames.client.comm.NGGameClient;
 import es.um.redes.nanoGames.client.shell.NGCommands;
 import es.um.redes.nanoGames.client.shell.NGShell;
+import es.um.redes.nanoGames.message.NGMensajeEntrarSala;
 import es.um.redes.nanoGames.server.NGPlayerInfo;
 import es.um.redes.nanoGames.utils.HibernateUtil;
 
@@ -91,7 +94,7 @@ public class NGController {
 	}
 
 	// Process commands provided by the users when they are not in a room
-	public void processCommand() {
+	public void processCommand(){
 		switch (currentCommand) {
 		case NGCommands.COM_TOKEN:
 			getTokenAndDeliver();
@@ -107,7 +110,7 @@ public class NGController {
 			getRoomList();
 			break;
 		case NGCommands.COM_ENTER:
-			// TODO
+			enterTheGame();
 			break;
 		case NGCommands.COM_HELP:
 			NGCommands.printCommandsHelp();
@@ -133,8 +136,7 @@ public class NGController {
 	}
 
 	private void getAndShowRooms() {
-		// We obtain the rooms from the server and we display them
-		// TODO
+		//Se hace automaticamente cuando hacemos ngClient.seeRoomList
 	}
 
 	private void registerNickName() {
@@ -157,7 +159,12 @@ public class NGController {
 
 	private void enterTheGame() {
 		// The users request to enter in the room
-		// TODO
+		try {
+			if (ngClient.sendJoinToRoom(room));
+			else return;
+		} catch (IOException e) {
+			System.out.println("Unable to join to the room");
+		}
 		// If success, we change the state in order to accept new commands
 		do {
 			// We will only accept commands related to a room
@@ -165,7 +172,8 @@ public class NGController {
 			processGameCommand();
 		} while (currentCommand != NGCommands.COM_EXIT);
 	}
-
+	
+	
 	private void processGameCommand() {
 		switch (currentCommand) {
 		case NGCommands.COM_RULES:
@@ -175,7 +183,7 @@ public class NGController {
 			// TODO
 			break;
 		case NGCommands.COM_ANSWER:
-			// TODO
+			sendAnswer();
 			break;
 		case NGCommands.COM_SOCKET_IN:
 			// In this case the user did not provide a command but an incoming message was
@@ -198,8 +206,14 @@ public class NGController {
 	}
 
 	private void sendAnswer() {
-		// In case we have to send an answer we will wait for the response to display it
-		// TODO
+		boolean condition = false;
+		do {
+			try {
+				condition = ngClient.sendAnswer(answer);
+			} catch (IOException e) {
+				System.out.println("¡Error en el envio de la respuesta!");
+			}
+		} while(condition);
 	}
 
 	private void processGameMessage() {

@@ -11,10 +11,13 @@ import org.hibernate.Transaction;
 import es.um.redes.nanoGames.broker.BrokerClient;
 import es.um.redes.nanoGames.client.application.NGController;
 import es.um.redes.nanoGames.message.NGMensajeConfirmar;
+import es.um.redes.nanoGames.message.NGMensajeEntrarSala;
 import es.um.redes.nanoGames.message.NGMensajeEnviarNickname;
 import es.um.redes.nanoGames.message.NGMensajeEnviarToken;
 import es.um.redes.nanoGames.message.NGMensajeListaSalas;
 import es.um.redes.nanoGames.message.NGMensajeListarSalas;
+import es.um.redes.nanoGames.message.NGMensajePregunta;
+import es.um.redes.nanoGames.message.NGMensajeRespuesta;
 import es.um.redes.nanoGames.server.roomManager.NGRoomManager;
 import es.um.redes.nanoGames.utils.HibernateUtil;
 
@@ -45,6 +48,9 @@ public class NGServerThread extends Thread {
 	NGPlayerInfo player;
 	// Current RoomManager (it depends on the room the user enters)
 	NGRoomManager roomManager;
+	private int numberOfTries = 0;
+	private int lastAnswer;
+	private boolean gameEnded= false;
 	
 	// TODO Add additional fields
 	private static final int MAXIMUM_TCP_SIZE = 65535;
@@ -76,6 +82,18 @@ public class NGServerThread extends Thread {
 			// While the connection is alive...
 			while (true) {
 				sendRoomList();
+				if (reciveAndVerifyJoinToRoom()) {
+					/*Si se verifica no se envia un confirmar, se enviara una pregunta cuando todos esten dentro*/
+					waitToOtherPlayers();
+					/*Todos estan listos, este mensaje será su equivalente a 'confirmar'*/
+
+					sendPregunta();		//enviamos la pregunta
+					do {
+						recieveRespuesta();	//vemos la respuesta
+						sendPregunta();		//preguntamos si falló o le enviamos un confirmar si acertó
+					} while(!gameEnded);	
+					
+				}
 				
 			}
 		} catch (Exception e) {
@@ -173,9 +191,82 @@ public class NGServerThread extends Thread {
 		System.out.println("Enviamos de roomList: "+listaSalas);
 		dos.write(listaSalas.getBytes());
 		
-		
+	}
+	
+	
+	private boolean reciveAndVerifyJoinToRoom() throws IOException {
+		byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
+		dis.read(arrayBytes);
+		String s = new String(arrayBytes);
+		NGMensajeEntrarSala entrar_sala = new NGMensajeEntrarSala();
+		entrar_sala.processNGMensajeEntrarSala(s);
+		int sala = entrar_sala.getNumSala();
+		int salasTotales = NanoGameServer.salasServidor.size();
+		boolean condition = false;
+		if ((sala>0) && (salasTotales>=sala)) {
+		//la sala solicitada existe
+			NGRoomManager rm = NanoGameServer.salasServidor.get(sala);
+			this.roomManager = rm;
+			
+			/* NECESITO PODER SABER si el juego ha comenzado o no para poder permitirle que se una 
+			 * lo del max players in room lo he añadido yo pero hace falta lo otro esto es necesario
+			 * para saber cuando ha empezado el juego 
+			 * if ((this.roomManager.aempezaoono)&&(this.roomManager.playersInRoom()<this.roomManager.maxPlayersInRoom)) 
+			 * condition = true*/
+		}
+		if (condition==false) { /*Caso especial, enviar un denegar, sino seguimos por otros metodos*/
+			NGMensajeConfirmar denegar = new NGMensajeConfirmar();
+			String data = denegar.createNGMensajeConfirmar(false);
+			this.dos.write(data.getBytes());
+		}
+		return condition;
 	}
 
+	private void waitToOtherPlayers() {
+		boolean condition = false;
+		while (!condition) {
+			if (this.roomManager.playersInRoom() == this.roomManager.maxPlayersInRoom())
+				condition = true;
+		}
+	}
+	
+	private void sendPregunta() {
+		String data_to_send;
+		String closeOrFar;
+			/*Necesitaremos un metodo que nos de el numero a adivinar para el servidor, esto podria hacerse de la siguiente manera: cuando 
+			 * entra un usuario al room manager y se mete como jugador se genera un numero aleatorio, asi nunca se sabra cual es y cambiara
+			 * para cualquier partida en dicha sala pero no entre rondas pues un jugador no puede entrar mientras este en curso*/
+		if (this.roomManager.getNumber>this.lastAnswer) {
+			closeOrFar ="Te has ido a cuenca";
+		} else if (this.roomManager.getNumber<this.lastAnswer) {
+			closeOrFar = "Cerca pero no";
+		}
+		else {
+			/*Enviamos confirmar porque ha acertado, siguiendo el automata*/
+			NGMensajeConfirmar confirmar = new NGMensajeConfirmar();
+			data_to_send =confirmar.createNGMensajeConfirmar(true);
+			this.gameEnded=true;
+			this.dos.write(data_to_send.getBytes());
+			return;
+		}
+		NGMensajePregunta pregunta = new NGMensajePregunta();
+		/*La primera pregunta no tiene un mensaje real para el jugador*/
+		if (numberOfTries == 0)
+			data_to_send = pregunta.createNGMensajePregunta(this.roomManager.getRules(), "Te diré si estas cerca o te pasaste, gg campeon");
+		else {
+			data_to_send = pregunta.createNGMensajePregunta(this.roomManager.getRules(), closeOrFar);
+		}
+	}
+	
+	private void recieveRespuesta() throws IOException {
+		byte[] array_bytes = new byte[MAXIMUM_TCP_SIZE];
+		this.dis.read(array_bytes);
+		NGMensajeRespuesta respuesta = new NGMensajeRespuesta();
+		respuesta.processNGMensajeRespuesta(new String(array_bytes));
+		this.numberOfTries++;
+		this.lastAnswer = Integer.parseInt(respuesta.getRespuesta());
+	}
+	
 	// Method to process messages received when the player is in the room
 	// TODO
 	private void processRoomMessages() throws IOException {
