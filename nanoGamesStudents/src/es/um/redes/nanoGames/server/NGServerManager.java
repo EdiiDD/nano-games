@@ -1,6 +1,8 @@
 package es.um.redes.nanoGames.server;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import es.um.redes.nanoGames.server.roomManager.NGRoomAdivinarNumero;
@@ -20,26 +22,30 @@ class NGServerManager {
     NGServerManager() {
         // Dar de alta las salas que existirán por defecto
         players = new HashMap<>();
-        salasServidor = new HashMap<>();
         // Sala disponibles en el servidor.
-        salasServidor.put(1, new NGRoomAdivinarNumero());
+        salasServidor = new HashMap<>();
     }
 
-    public void registerRoomManager(NGRoomManager rm) {
-        // When a new room manager is registered we assigned it to a room
-        // TODO
+    public void registerRoomManager(int numSala, NGRoomManager rm) {
+        salasServidor.put(numSala, rm);
     }
 
     // Returns the set of existing rooms
-    // public synchronized getRoomList() {
-    // TODO
-    // }
+    public synchronized List<NGRoomManager> getRoomList() {
+
+        LinkedList<NGRoomManager> salasDisponibles = new LinkedList<>();
+        for (Integer sala : salasServidor.keySet()) {
+            salasDisponibles.add(salasServidor.get(sala));
+        }
+        return salasDisponibles;
+
+    }
 
     // Given a room it returns the description
     public synchronized String getRoomDescription(NGRoomManager ngrm) {
         // We make use of the RoomManager to obtain an updated description of the room
         // return ngrm.get(ngrm).getDescription();
-        return ngrm.getDescription();
+        return ngrm.toString();
     }
 
     // False is returned if the nickname is already registered, True otherwise and
@@ -60,7 +66,7 @@ class NGServerManager {
     // A player request to enter in a room. If the access is granted the RoomManager
     // is returned
     public synchronized NGRoomManager enterRoom(NGPlayerInfo p, NGRoomManager ngrm, int numSala) {
-        // TODO Check if the room exists
+        // Comprobamos si la sala existe y si se puede registrar en la sala.
         if (ngrm.registerPlayer(p) & salasServidor.containsKey(numSala)) {
             return ngrm;
         } else
@@ -70,11 +76,11 @@ class NGServerManager {
     // A player leaves the room
     public synchronized boolean leaveRoom(NGPlayerInfo p, NGRoomManager ngrm, int numSala) {
         // TODO Check if the room exists
-        if(salasServidor.containsKey(numSala)){
+        if (salasServidor.containsKey(numSala)) {
             ngrm.removePlayer(p);
-            return  true;
+            return true;
         }
-        return  false;
+        return false;
     }
 
     public HashMap<String, NGPlayerInfo> getPlayers() {

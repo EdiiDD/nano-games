@@ -5,11 +5,16 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 import es.um.redes.nanoGames.broker.BrokerClient;
 import es.um.redes.nanoGames.message.*;
+import es.um.redes.nanoGames.server.roomManager.NGChallenge;
+import es.um.redes.nanoGames.server.roomManager.NGRoomAdivinarNumero;
 import es.um.redes.nanoGames.server.roomManager.NGRoomManager;
+import es.um.redes.nanoGames.server.roomManager.NGRoomStatus;
 
 /**
  * A new thread runs for each connected client
@@ -19,8 +24,9 @@ public class NGServerThread extends Thread {
     // Possible states of the connected client
     private static final byte PRE_TOKEN = 1;
     private static final byte PRE_REGISTRATION = 2;
-    private static final byte OFF_ROOM = 3;
-    private static final byte IN_ROOM = 4;
+    private static final byte REGISTRATION = 3;
+    private static final byte OFF_ROOM = 4;
+    private static final byte IN_ROOM = 5;
 
     // Time difference between the token provided by the client and the one obtained
     // from the broker directly
@@ -40,6 +46,8 @@ public class NGServerThread extends Thread {
     NGRoomManager roomManager;
     // Current RoomManager;
     private int numSalaActual;
+    // Respuesta correcta por parte del jugador.
+    private boolean respuestaOk;
 
     // TODO Add additional fields
     private static final int MAXIMUM_TCP_SIZE = 65535;
@@ -55,6 +63,8 @@ public class NGServerThread extends Thread {
         }
         this.brokerClient = new BrokerClient(brokerHostname);
         this.serverManager = manager;
+        this.player = new NGPlayerInfo("Jugador", 0);
+        this.player.setSatusPlayer(new NGRoomStatus(PRE_TOKEN, "Sin Token"));
 
     }
 
@@ -68,14 +78,14 @@ public class NGServerThread extends Thread {
             receiveAndVerifyToken();
             // The second step is to receive and to verify the nick name
             receiveAndVerifyNickname();
+            // Pedimos la lista de salas
+            sendRoomList();
             // While the connection is alive...
+            // Entramos a una sala
+            enterTheRoom();
             while (true) {
-                // Pedimos la lista de salas
-                sendRoomList();
-                // Entramos a una sala
-                enterTheRoom();
                 // Dentro de la sala
-                processRoomMessages();
+                //processRoomMessages();
 
             }
 
@@ -118,6 +128,7 @@ public class NGServerThread extends Thread {
             // Creacion del mensaje de respuesta, dicha confirmacion depende de la
             // verificacion del token.
             String mensaje_confirmar = mc_enviar.createNGMensajeConfirmar(tokenVerified);
+            this.player.setSatusPlayer(new NGRoomStatus(PRE_REGISTRATION, "Pre Registration"));
             dos.write(mensaje_confirmar.getBytes());
 
         }
@@ -142,7 +153,8 @@ public class NGServerThread extends Thread {
             men_recibido.processNGMensajeEnviarNickname(s);
             NGMensajeConfirmar mc_enviar = new NGMensajeConfirmar();
 
-            player = new NGPlayerInfo(men_recibido.getNickname(), 0);
+            player.setNick(men_recibido.getNickname());
+            player.setSatusPlayer(new NGRoomStatus(REGISTRATION, "Registrado"));
             nickVerified = serverManager.addPlayer(player);
 
             String mensaje_confirmar = mc_enviar.createNGMensajeConfirmar(nickVerified);
@@ -168,7 +180,8 @@ public class NGServerThread extends Thread {
         String descripcionSalas = "";
 
         for (Integer rm : serverManager.getSalasServidor().keySet()) {
-            descripcionSalas += serverManager.getSalasServidor().get(rm).toString();
+
+            descripcionSalas += serverManager.getRoomDescription(serverManager.getSalasServidor().get(rm));
             descripcionSalas += " & ";
         }
         NGMensajeListaSalas mls_enviar = new NGMensajeListaSalas();
@@ -192,7 +205,9 @@ public class NGServerThread extends Thread {
 
             roomManager = serverManager.getSalasServidor().get(mensajeEntrarSalaRecibido.getNumSala());
             if (serverManager.enterRoom(player, roomManager, mensajeEntrarSalaRecibido.getNumSala()) != null) {
-                System.out.println("*El jugador " + player.getNick() + " ha entrada a la sala " + roomManager.getRegistrationName());
+
+                System.out.println("*El jugador " + player.getNick() + " ha entrada a la sala " + roomManager.getRegistrationName() + " el numero ha adivinar es: " + NGRoomAdivinarNumero.getNumeroAleatorio());
+                player.setSatusPlayer(new NGRoomStatus(IN_ROOM, "En Sala"));
                 this.numSalaActual = mensajeEntrarSalaRecibido.getNumSala();
                 sePuedeEntrar = true;
             } else {
@@ -214,36 +229,61 @@ public class NGServerThread extends Thread {
     // TODO
     private void processRoomMessages() throws IOException {
         // First we send the rules and the initial status
+        sendRules();
         // Now we check for incoming messages, status updates and new challenges
-        System.out.println("Dentro del juego");
         boolean exit = false;
+        NGChallenge challenge = roomManager.checkChallenge(player);
+        System.out.println("Challenger de la sala: " + challenge.getChallenge());
         while (!exit) {
-            // TODO
+            processNewChallenge(challenge);
 
-            exit = exitRoomGame();
         }
     }
 
-    private void getRules() {
+    private void sendRules() {
 
         try {
             byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
             dis.read(arrayBytes);
-            String s = new String(arrayBytes);
+            String datosRecibidos = new String(arrayBytes);
+            NGMensajeRespuesta mrRecibido = new NGMensajeRespuesta();
+            mrRecibido.processNGMensajeRespuesta(datosRecibidos);
 
-            NGMensajeListarSalas mls_recibido = new NGMensajeListarSalas();
-            mls_recibido.processNGMensajeListarSalas(s);
+            // "Logica del juego".
 
-            String reglas = roomManager.getRules();
 
-            NGMensajeListaSalas mls_enviar = new NGMensajeListaSalas();
-            String listaSalas = mls_enviar.createNGMensajeListaSalas(0, reglas);
-            dos.write(listaSalas.getBytes());
+            NGMensajePregunta mpEnviar = new NGMensajePregunta();
+            String respuestaEnviar = mpEnviar.createNGMensajePregunta("Las reglas son: ", roomManager.getRules());
+            dos.write(respuestaEnviar.getBytes());
+
         } catch (IOException e) {
             e.printStackTrace();
         }
 
     }
+
+    private void processAnswer(NGChallenge challenge) {
+        // TODO si uno de los jugadores acierta, se informa a los demas.
+        try {
+            byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
+            dis.read(arrayBytes);
+            String datosRecibidos = new String(arrayBytes);
+            NGMensajeRespuesta mrRecibido = new NGMensajeRespuesta();
+            mrRecibido.processNGMensajeRespuesta(datosRecibidos);
+            // "Logica del juego".
+            NGRoomStatus ngRoomStatus = roomManager.answer(player, mrRecibido.getRespuesta(), challenge);
+            if (ngRoomStatus.getStatusNumber() == NGRoomManager.GANADOR) {
+                respuestaOk = true;
+            }
+            NGMensajePregunta mpEnviar = new NGMensajePregunta();
+            String respuestaEnviar = mpEnviar.createNGMensajePregunta(player.getSatusPlayer().getStatus(), player.getNick());
+            dos.write(respuestaEnviar.getBytes());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public void closeConection() {
         try {
@@ -281,11 +321,12 @@ public class NGServerThread extends Thread {
             System.out.println("S recibe: " + s);
             NGMensajeSalirSala mssRecibido = new NGMensajeSalirSala();
             mssRecibido.processNGMensajeSalirSala(s);
-            boolean salirSala = serverManager.leaveRoom(player,roomManager,numSalaActual);
+            boolean salirSala = serverManager.leaveRoom(player, roomManager, numSalaActual);
             NGMensajeConfirmar mccEnviar = new NGMensajeConfirmar();
             String datosEnviar = mccEnviar.createNGMensajeConfirmar(salirSala);
             System.out.println("S envia: " + datosEnviar);
             dos.write(datosEnviar.getBytes());
+            this.player.setSatusPlayer(new NGRoomStatus(OFF_ROOM, "Fuera de sala"));
             return salirSala;
 
         } catch (IOException e) {
@@ -293,5 +334,45 @@ public class NGServerThread extends Thread {
         }
 
         return false;
+    }
+
+
+    private void processNewChallenge(NGChallenge challenge) throws IOException {
+        //We send the challenge to the client
+        //TODO
+        //Now we set the timeout
+        Timer timer = new Timer();
+        boolean timeout_triggered = false;
+        timer.schedule(new TimerTask() {
+                           @Override
+                           public void run() {
+                               System.out.println("Time's up!");
+                               timer.cancel();
+                           }
+                       }, roomManager.getTimeout(),
+                roomManager.getTimeout());
+        boolean answerProvided = false;
+        //Loop until an answer is provided or the timeout expires
+        while (!timeout_triggered && !respuestaOk) {
+            if (dis.available() > 0) {
+                //The client sent a message
+                //TODO Process the message
+                //IF ANSWER Then call roomManager.answer() and proceed
+                processAnswer(challenge);
+            } else
+                try {
+                    //To avoid a CPU-consuming busy wait
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+//Ignore }
+                }
+            if (!respuestaOk) {
+                //The timeout expired
+                timer.cancel();
+                //answerProvided = true;
+                //TODO call roomManager.noAnswer() and proceed
+                roomManager.noAnswer(player);
+            }
+        }
     }
 }

@@ -10,8 +10,15 @@ import es.um.redes.nanoGames.server.NGPlayerInfo;
 
 public class NGRoomAdivinarNumero extends NGRoomManager {
 
+
+    public static final byte GANADOR = 0;
+    public static final byte NO_GANADOR = -1;
+    public static final byte NO_CONTESTA = -2;
+
+
     private static final int NUM_MAX_PLAYER = 2;
     private static final int NUM_MAX_TRY = 7;
+    private static double numeroAleatorio;
 
     private static final String NAME_ROOM = "ADVIVINZANZA NUMERO";
     private static int numJugadores = 0;
@@ -19,17 +26,16 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
     private List<NGPlayerInfo> jugadoresSala;
 
     public NGRoomAdivinarNumero() {
-        super();
         // Reglas de la sala.
         rules = rulesRoom();
         // Registration Name.
         registrationName = NAME_ROOM;
         description = descriptionRoom();
-        // El timeout se actuliza cada vez que el usuario anterior responde.
-        // Si no responde pasado el timeout el jugador ha perdido.
         mapasChallenge = new HashMap<>();
         mapasChallenge = crearNGChallenge();
         jugadoresSala = new LinkedList<>();
+        numeroAleatorio = (int) (Math.random() * 20);
+        gameTimeout = 1000;
     }
 
     @Override
@@ -37,6 +43,8 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
         // Tenemos que modificar el numJugadores cada vez que se añade un player.
         if (jugadoresSala.size() < NUM_MAX_PLAYER) {
             jugadoresSala.add(p);
+            numJugadores = jugadoresSala.size();
+            System.out.println(jugadoresSala.size());
             return true;
         }
         return false;
@@ -53,27 +61,37 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
         return null;
     }
 
-    // Devolvemos todos los challenges de la sala. No se contruye ninguno despues de
-    // conseguir uno,
-    // simplemente se alcanza los indicados en la ROOM.
     @Override
     public NGChallenge checkChallenge(NGPlayerInfo p) {
-        // TODO Auto-generated method stub
-        // Añadimos a este usuario su nuevo score.
-        mapasChallenge.get(1);
-        return null;
+        // Devolvemos un challenge aleatorio.
+        int numChallenge = (int) (Math.random() * mapasChallenge.size()) + 1;
+        return mapasChallenge.get(numChallenge);
     }
 
     @Override
     public NGRoomStatus noAnswer(NGPlayerInfo p) {
-        // TODO Auto-generated method stub
-        return null;
+        removePlayer(p);
+        p.setSatusPlayer(new NGRoomStatus(NO_CONTESTA, "El Jugador no ha conestatado en el tiempo requerido"));
+        return p.getSatusPlayer();
     }
 
     @Override
-    public NGRoomStatus answer(NGPlayerInfo p, String answer) {
-        // TODO Auto-generated method stub
-        return null;
+    public NGRoomStatus answer(NGPlayerInfo p, String answer, NGChallenge challenge) {
+        // Tratamiento de la respuesta por parte del cliente
+        int numAnswer = Integer.valueOf(answer);
+        if (numAnswer != numeroAleatorio) {
+            String calienteFrio = "";
+            if (numAnswer - numeroAleatorio < 0) {
+                calienteFrio = "Te has quedado por debajo, INTENTALO DE NUEVO!!";
+            } else {
+                calienteFrio = "Te has quedado por encima, INTENTALO DE NUEVO!!";
+            }
+            p.setSatusPlayer(new NGRoomStatus(NO_GANADOR, calienteFrio));
+        } else {
+            p.setSatusPlayer(new NGRoomStatus(GANADOR, "HAS GANADO!! "));
+            p.actulizarScore(challenge.getChallengeNumber());
+        }
+        return p.getSatusPlayer();
     }
 
     @Override
@@ -94,7 +112,7 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
 
     @Override
     public String getDescription() {
-        return description;
+        return toString();
     }
 
     @Override
@@ -139,13 +157,14 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
 
     @Override
     public String toString() {
-        return "NGRoomAdivinarNumero \tPlayer[ " + jugadoresSalaToString(jugadoresSala) + " ]";
+        return "NGRoomAdivinarNumero \tPlayer:[ " + jugadoresSalaToString(jugadoresSala) + " ]";
     }
 
     public String jugadoresSalaToString(List<NGPlayerInfo> jugadoresSala) {
+        System.out.println("En la sala se encuentran: " + this.jugadoresSala.size());
         String devolver = " ";
         for (NGPlayerInfo player : jugadoresSala) {
-            devolver += player.getNick() + " ";
+            devolver += "Nick: " + player.getNick() + " Score: " + player.getScore() + " | ";
         }
         return devolver;
     }
@@ -156,4 +175,7 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
 
     }
 
+    public static double getNumeroAleatorio() {
+        return numeroAleatorio;
+    }
 }

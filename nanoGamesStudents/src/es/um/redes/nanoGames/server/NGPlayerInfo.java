@@ -1,24 +1,19 @@
 package es.um.redes.nanoGames.server;
 
+import es.um.redes.nanoGames.client.application.NGController;
 import es.um.redes.nanoGames.client.application.NanoGame;
+import es.um.redes.nanoGames.server.roomManager.NGRoomStatus;
 
 public class NGPlayerInfo {
     // TODO Include additional fields if required
 
-    private int id;
-
     private String nick; // Nickname of the user
 
-    private byte status; // Current status of the user (according to the automata)
+    private NGRoomStatus satusPlayer; // Current status of the user (according to the automata)
 
     private int score; // Current score of the user
 
-    // Contructor de la clase
-    public NGPlayerInfo(int id, String nick, int score) {
-        this.id = id;
-        this.nick = nick;
-        this.score = score;
-    }
+    private  int jugadasHechas;
 
     public NGPlayerInfo(String nick, int score) {
         this.nick = nick;
@@ -27,31 +22,18 @@ public class NGPlayerInfo {
 
     // Constructor to make copies
     public NGPlayerInfo(NGPlayerInfo p) {
-        this.id = p.id;
         this.nick = new String(p.nick);
-        this.status = p.status;
         this.score = p.score;
+        this.satusPlayer = new NGRoomStatus((short) 0,"Token sin validar");
     }
 
-    // Default constructor, usado para Hibernate
-    public NGPlayerInfo() {
 
+    public NGRoomStatus getSatusPlayer() {
+        return satusPlayer;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public int getId() {
-        return this.id;
-    }
-
-    public void setStatus(byte status) {
-        this.status = status;
-    }
-
-    public byte getStatus() {
-        return status;
+    public void setSatusPlayer(NGRoomStatus satusPlayer) {
+        this.satusPlayer = satusPlayer;
     }
 
     public String getNick() {
@@ -71,9 +53,17 @@ public class NGPlayerInfo {
         this.score += score;
     }
 
+    public int getJugadasHechas() {
+        return jugadasHechas;
+    }
+
+    public void setJugadasHechas(int jugadasHechas) {
+        this.jugadasHechas = jugadasHechas;
+    }
+
     @Override
     public String toString() {
-        return "NGPlayerInfo [nick=" + nick + ", status=" + status + ", score=" + score + "]";
+        return "NGPlayerInfo [nick=" + nick + ", status=" + satusPlayer.getStatusNumber() + ", score=" + score + "]";
     }
 
 

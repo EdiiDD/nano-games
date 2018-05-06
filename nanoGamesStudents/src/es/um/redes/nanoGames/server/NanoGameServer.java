@@ -20,8 +20,6 @@ public class NanoGameServer implements Runnable {
 
     private static String brokerHostname;
 
-    private int i;
-
 
     public static NanoGameServer create(int port) {
         return new NanoGameServer(new InetSocketAddress(port));
@@ -33,7 +31,8 @@ public class NanoGameServer implements Runnable {
         //This will be the Status shared among all the Threads
         manager = new NGServerManager();
         //TODO We add one manager for each game we have implemented
-        //manager.registerRoomManager(new NGMyGame());
+        NGRoomManager san = new NGRoomAdivinarNumero();
+        manager.registerRoomManager(1,san);
     }
 
     /**

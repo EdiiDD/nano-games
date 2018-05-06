@@ -28,7 +28,7 @@ public class NGController {
     // The shell for user commands from the standard input
     private NGShell shell;
     // Last command provided by the user
-    private byte currentCommand;
+    private static byte currentCommand;
     // Nickname of the user
     private String nickname;
     // Current room of the user (if any)
@@ -55,13 +55,14 @@ public class NGController {
         this.ngClient = new NGGameClient(serverHostname);
     }
 
-    public byte getCurrentCommand() {
-        return this.currentCommand;
+    public  byte getCurrentCommand() {
+        return currentCommand;
     }
 
     public void setCurrentCommand(byte command) {
         currentCommand = command;
     }
+
 
     public void setCurrentCommandArguments(String[] args) {
         // According to the command we register the related parameters
@@ -147,6 +148,7 @@ public class NGController {
     private void enterTheGame() {
         // The users request to enter in the room
         enterTheRoom();
+        sendRules();
         // If success, we change the state in order to accept new commands
         do {
             // We will only accept commands related to a room
@@ -251,6 +253,7 @@ public class NGController {
         shell.readGeneralCommand();
         setCurrentCommand(shell.getCommand());
         setCurrentCommandArguments(shell.getCommandArguments());
+
     }
 
     public boolean sendToken() {

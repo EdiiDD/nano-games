@@ -163,25 +163,41 @@ public class NGGameClient {
 
 
     public void sendAnswer(String answer) {
-
-    }
-
-    public void sendRules() {
-        NGMensajeListaSalas mls_recived = new NGMensajeListaSalas();
+        NGMensajeRespuesta mrEnviar = new NGMensajeRespuesta();
+        NGMensajePregunta mpRecibido = new NGMensajePregunta();
         try {
-            NGMensajeListarSalas mls_enviar = new NGMensajeListarSalas();
-            String data_to_send = mls_enviar.createNGMensajeListarSalas();
-            dos.write(data_to_send.getBytes());
+
+            String datosEnviar = mrEnviar.createNGMensajeRespuesta(answer);
+            dos.write(datosEnviar.getBytes());
 
             byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
             dis.read(arrayBytes);
-            String data_recived = new String(arrayBytes);
-            mls_recived = new NGMensajeListaSalas();
-            mls_recived.processNGMensajeListaSalas(data_recived);
-            System.out.println(mls_recived.getSala(0));
+            String datosRecibidos = new String(arrayBytes);
+            mpRecibido.processNGMensajePregunta(datosRecibidos);
+            System.out.println(mpRecibido.getInfo());
 
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    // TODO se podría hacer mas generico. sendInfo()
+    public void sendRules() {
+        NGMensajeRespuesta mrEnviar = new NGMensajeRespuesta();
+        NGMensajePregunta mpRecibido = new NGMensajePregunta();
+        try {
+
+            // Enviamos una respuesta vacia, pero queremos las reglas de la sala.
+            String datosEnviar = mrEnviar.createNGMensajeRespuesta("Reglas");
+            dos.write(datosEnviar.getBytes());
+
+            byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
+            dis.read(arrayBytes);
+            String datosRecibidos = new String(arrayBytes);
+            mpRecibido.processNGMensajePregunta(datosRecibidos);
+            System.out.println(mpRecibido.getInfo() + mpRecibido.getMensajeJugador());
+
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -192,7 +208,6 @@ public class NGGameClient {
         try {
             NGMensajeSalirSala mssEnviar = new NGMensajeSalirSala();
             String datosEnvia = mssEnviar.createNGMensajeSalirSala();
-            System.out.println("C envia: " + datosEnvia);
             dos.write(datosEnvia.getBytes());
 
             byte[] arraybytes = new byte[MAXIMUM_TCP_SIZE];
@@ -200,7 +215,6 @@ public class NGGameClient {
             String datosRecibidos = new String(arraybytes);
             NGMensajeConfirmar mcRecibido = new NGMensajeConfirmar();
             mcRecibido.processNGMensajeConfirmar(datosRecibidos);
-            System.out.println("C recibe: " + datosRecibidos);
             if(mcRecibido.isConfirmated()){
                 System.out.println("Has salido de la sala");
             }
