@@ -38,4 +38,7 @@ public abstract class NGRoomManager {
 	public int getTimeout() {
 		return gameTimeout;
 	}
+	public int maxPlayersInRoom() {
+		return 0;
+	}
 }
