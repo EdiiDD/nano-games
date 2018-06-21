@@ -195,14 +195,11 @@ public class NGController {
 
     private void sendAnswer() {
         // In case we have to send an answer we will wait for the response to display it
-        // TODO
         ngClient.sendAnswer(answer);
     }
 
     private void processGameMessage() {
-        // This method processes the incoming message received when the shell was
-        // waiting for a user command
-        // TODO
+        ngClient.processGameMessage();
     }
 
     // Metodo para la obtencion del token por parte del cliente y el correspondiente

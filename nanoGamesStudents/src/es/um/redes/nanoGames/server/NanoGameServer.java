@@ -5,9 +5,12 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import es.um.redes.nanoGames.server.roomManager.NGRoomAdivinarNumero;
+import es.um.redes.nanoGames.server.roomManager.NGRoomAdivinarNumeroTurno;
 import es.um.redes.nanoGames.server.roomManager.NGRoomManager;
 
 public class NanoGameServer implements Runnable {
@@ -20,6 +23,8 @@ public class NanoGameServer implements Runnable {
 
     private static String brokerHostname;
 
+    // Estructura para asociar cada jugador a su socket
+    protected static Map<Integer,Map<NGPlayerInfo,Socket>> mapaSockets;
 
     public static NanoGameServer create(int port) {
         return new NanoGameServer(new InetSocketAddress(port));
@@ -30,9 +35,15 @@ public class NanoGameServer implements Runnable {
 
         //This will be the Status shared among all the Threads
         manager = new NGServerManager();
-        //TODO We add one manager for each game we have implemented
+        mapaSockets = new HashMap<>();
+        // Añadimos al servidor las sala de juegos disponibles
         NGRoomManager san = new NGRoomAdivinarNumero();
+        NGRoomManager sant = new NGRoomAdivinarNumeroTurno();
         manager.registerRoomManager(1,san);
+        manager.registerRoomManager(2,sant);
+        // Actualizamos el mapa de sockets
+        mapaSockets.put(1, new HashMap<>());
+        mapaSockets.put(2, new HashMap<>());
     }
 
     /**
@@ -47,7 +58,6 @@ public class NanoGameServer implements Runnable {
                 // accept returns a socket to exchange messages with the incoming client
                 Socket s = serverSocket.accept();
                 System.out.println("New client connected from " + s.getInetAddress().toString() + ":" + s.getPort());
-
                 // A new thread is started and it receives the shared status, the socket and the broker address
                 new NGServerThread(manager, s, brokerHostname).start();
             }
@@ -87,4 +97,6 @@ public class NanoGameServer implements Runnable {
             brokerHostname = args[0];
         server.init();
     }
+
+
 }

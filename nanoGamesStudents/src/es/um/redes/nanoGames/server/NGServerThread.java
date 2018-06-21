@@ -4,9 +4,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 import es.um.redes.nanoGames.broker.BrokerClient;
@@ -39,15 +38,16 @@ public class NGServerThread extends Thread {
     private DataInputStream dis;
     private DataOutputStream dos;
     // Utility class to communicate with the Broker
-    BrokerClient brokerClient;
-    // Current player
-    NGPlayerInfo player;
+    private volatile BrokerClient brokerClient;
+    // Current currentPlayer
+    private NGPlayerInfo currentPlayer;
     // Current RoomManager (it depends on the room the user enters)
-    NGRoomManager roomManager;
+    private NGRoomManager currentRoomManager;
     // Current RoomManager;
     private int numSalaActual;
-    // Respuesta correcta por parte del jugador.
-    private boolean respuestaOk;
+    // Estado de la sala.
+    private NGRoomStatus estadoSala;
+
 
     // TODO Add additional fields
     private static final int MAXIMUM_TCP_SIZE = 65535;
@@ -63,8 +63,8 @@ public class NGServerThread extends Thread {
         }
         this.brokerClient = new BrokerClient(brokerHostname);
         this.serverManager = manager;
-        this.player = new NGPlayerInfo("Jugador", 0);
-        this.player.setSatusPlayer(new NGRoomStatus(PRE_TOKEN, "Sin Token"));
+        this.currentPlayer = new NGPlayerInfo("Jugador", 0);
+        this.currentPlayer.setSatusPlayer(new NGRoomStatus(PRE_TOKEN, "Sin Token"));
 
     }
 
@@ -85,7 +85,7 @@ public class NGServerThread extends Thread {
             enterTheRoom();
             while (true) {
                 // Dentro de la sala
-                //processRoomMessages();
+                processRoomMessages();
 
             }
 
@@ -97,7 +97,7 @@ public class NGServerThread extends Thread {
 
         }
         // TODO Close the socket
-        exitRoomGame();
+
 
     }
 
@@ -128,7 +128,7 @@ public class NGServerThread extends Thread {
             // Creacion del mensaje de respuesta, dicha confirmacion depende de la
             // verificacion del token.
             String mensaje_confirmar = mc_enviar.createNGMensajeConfirmar(tokenVerified);
-            this.player.setSatusPlayer(new NGRoomStatus(PRE_REGISTRATION, "Pre Registration"));
+            this.currentPlayer.setSatusPlayer(new NGRoomStatus(PRE_REGISTRATION, "Pre Registration"));
             dos.write(mensaje_confirmar.getBytes());
 
         }
@@ -142,7 +142,7 @@ public class NGServerThread extends Thread {
         // this loop runs until the nick provided is not duplicated
         while (!nickVerified) {
             // We obtain the nick from the message
-            // we try to add the player in the server manager
+            // we try to add the currentPlayer in the server manager
             // if success we send to the client the NICK_OK message
             // otherwise we send DUPLICATED_NICK
 
@@ -153,12 +153,12 @@ public class NGServerThread extends Thread {
             men_recibido.processNGMensajeEnviarNickname(s);
             NGMensajeConfirmar mc_enviar = new NGMensajeConfirmar();
 
-            player.setNick(men_recibido.getNickname());
-            player.setSatusPlayer(new NGRoomStatus(REGISTRATION, "Registrado"));
-            nickVerified = serverManager.addPlayer(player);
+            currentPlayer.setNick(men_recibido.getNickname());
+            currentPlayer.setSatusPlayer(new NGRoomStatus(REGISTRATION, "Registrado"));
+            nickVerified = serverManager.addPlayer(currentPlayer);
 
             String mensaje_confirmar = mc_enviar.createNGMensajeConfirmar(nickVerified);
-            System.out.println("*El jugador " + player.getNick() + " se ha registrado en el servidor");
+            System.out.println("*El jugador " + currentPlayer.getNick() + " se ha registrado en el servidor");
             dos.write(mensaje_confirmar.getBytes());
 
         }
@@ -203,15 +203,19 @@ public class NGServerThread extends Thread {
             NGMensajeEntrarSala mensajeEntrarSalaRecibido = new NGMensajeEntrarSala();
             mensajeEntrarSalaRecibido.processNGMensajeEntrarSala(s);
 
-            roomManager = serverManager.getSalasServidor().get(mensajeEntrarSalaRecibido.getNumSala());
-            if (serverManager.enterRoom(player, roomManager, mensajeEntrarSalaRecibido.getNumSala()) != null) {
+            currentRoomManager = serverManager.getSalasServidor().get(mensajeEntrarSalaRecibido.getNumSala());
+            if (serverManager.enterRoom(currentPlayer, currentRoomManager, mensajeEntrarSalaRecibido.getNumSala()) != null) {
 
-                System.out.println("*El jugador " + player.getNick() + " ha entrada a la sala " + roomManager.getRegistrationName() + " el numero ha adivinar es: " + NGRoomAdivinarNumero.getNumeroAleatorio());
-                player.setSatusPlayer(new NGRoomStatus(IN_ROOM, "En Sala"));
+                System.out.println("*El jugador " + currentPlayer.getNick() + " ha entrada a la sala " + currentRoomManager.getRegistrationName() + " el numero ha adivinar es: " + NGRoomAdivinarNumero.getNumeroAleatorio());
+                currentPlayer.setSatusPlayer(new NGRoomStatus(IN_ROOM, "En Sala"));
                 this.numSalaActual = mensajeEntrarSalaRecibido.getNumSala();
+                // El mapa de los jugadores asociado a su socket, dentro de la sala actual.
+                Map<NGPlayerInfo, Socket> listaSockets = NanoGameServer.mapaSockets.get(this.numSalaActual);
+                listaSockets.put(currentPlayer, this.socket);
+                NanoGameServer.mapaSockets.put(mensajeEntrarSalaRecibido.getNumSala(), listaSockets);
                 sePuedeEntrar = true;
             } else {
-                System.out.println("*El jugador " + player.getNick() + " no puede entrar a la sala ");
+                System.out.println("*El jugador " + currentPlayer.getNick() + " no puede entrar a la sala ");
 
             }
 
@@ -225,18 +229,69 @@ public class NGServerThread extends Thread {
     }
 
 
-    // Method to process messages received when the player is in the room
+    // Method to process messages received when the currentPlayer is in the room
     // TODO
     private void processRoomMessages() throws IOException {
         // First we send the rules and the initial status
+        this.estadoSala = currentRoomManager.checkStatus(currentPlayer);
         sendRules();
         // Now we check for incoming messages, status updates and new challenges
         boolean exit = false;
-        NGChallenge challenge = roomManager.checkChallenge(player);
-        System.out.println("Challenger de la sala: " + challenge.getChallenge());
+        NGChallenge challenge = currentRoomManager.checkChallenge(currentPlayer);
+        System.out.println("*El jugador " + currentPlayer.getNick() + " tiene el reto " + challenge.toString());
         while (!exit) {
-            processNewChallenge(challenge);
+            // Si no se recibe ninguna respuesta, es decir, se ha perddo la conexión con el cliente.
+            proceessNewChallenge(challenge);
+        }
+    }
 
+    private AtomicBoolean timeout_triggered = new AtomicBoolean();
+
+    //Private class to implement a very simple timer
+    private class Timeout extends TimerTask {
+        @Override
+        public void run() {
+            timeout_triggered.set(true);
+        }
+    }
+
+    private void proceessNewChallenge(NGChallenge challenge) throws IOException {
+        //We send the challenge to the client
+        //TODO
+        //Now we set the timeout
+        Timer timer = null;
+        timeout_triggered.set(false);
+        timer = new Timer();
+        timer.schedule(new Timeout(), currentRoomManager.getTimeout(), currentRoomManager.getTimeout());
+
+        boolean answerProvided = false;
+
+        //Loop until an answer is provided or the timeout expires
+        while (!timeout_triggered.get() && !answerProvided) {
+            if (dis.available() > 0) {
+                //The client sent a message VER EL STATUS QUE DEVUELVE ESTE!!
+                //IF ANSWER Then call currentRoomManager.answer() and proceed
+                processAnswer(challenge);
+
+
+            } else
+                try {
+                    //To avoid a CPU-consuming busy wait
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    //Ignore
+                }
+        }
+
+        // TODO Avisar a todos los jugadores de la sala que hay un ganador.
+
+
+        if (!answerProvided) {
+            //The timeout expired
+            timer.cancel();
+            //TODO call currentRoomManager.noAnswer() and proceed
+            System.out.println("*El player " + currentPlayer.getNick() + " no ha respondido pasado un tiempo!!");
+            //currentRoomManager.noAnswer(currentPlayer);
         }
     }
 
@@ -250,10 +305,8 @@ public class NGServerThread extends Thread {
             mrRecibido.processNGMensajeRespuesta(datosRecibidos);
 
             // "Logica del juego".
-
-
             NGMensajePregunta mpEnviar = new NGMensajePregunta();
-            String respuestaEnviar = mpEnviar.createNGMensajePregunta("Las reglas son: ", roomManager.getRules());
+            String respuestaEnviar = mpEnviar.createNGMensajePregunta("Las reglas son: ", currentRoomManager.getRules());
             dos.write(respuestaEnviar.getBytes());
 
         } catch (IOException e) {
@@ -262,22 +315,48 @@ public class NGServerThread extends Thread {
 
     }
 
+
+    /**
+     * TODO La magra del asunto
+     * -Falta: Informar a los demas de que hay un ganador!!
+     */
+
     private void processAnswer(NGChallenge challenge) {
-        // TODO si uno de los jugadores acierta, se informa a los demas.
         try {
             byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
             dis.read(arrayBytes);
             String datosRecibidos = new String(arrayBytes);
             NGMensajeRespuesta mrRecibido = new NGMensajeRespuesta();
-            mrRecibido.processNGMensajeRespuesta(datosRecibidos);
-            // "Logica del juego".
-            NGRoomStatus ngRoomStatus = roomManager.answer(player, mrRecibido.getRespuesta(), challenge);
-            if (ngRoomStatus.getStatusNumber() == NGRoomManager.GANADOR) {
-                respuestaOk = true;
-            }
             NGMensajePregunta mpEnviar = new NGMensajePregunta();
-            String respuestaEnviar = mpEnviar.createNGMensajePregunta(player.getSatusPlayer().getStatus(), player.getNick());
-            dos.write(respuestaEnviar.getBytes());
+            mrRecibido.processNGMensajeRespuesta(datosRecibidos);
+
+            // "Logica del juego", tenemos que enviar el mensaje por todos los sockets
+
+            // Sala por turno
+            if (numSalaActual == 2) {
+
+                // Recupero el mapa de los player-socket asociados a la sala.
+                Map<NGPlayerInfo, Socket> ppa = NanoGameServer.mapaSockets.get(numSalaActual);
+                String respuestas = "";
+                currentRoomManager.answer(currentPlayer, mrRecibido.getRespuesta(), challenge);
+                // Recorro todas las respuestas de los jugadores.
+                for (NGPlayerInfo player : ppa.keySet()) {
+                    respuestas += player.getSatusPlayer().getStatus() + "       ";
+                }
+
+                // Envio todas las respuestas a todos los jugadores.
+                for (NGPlayerInfo player : ppa.keySet()) {
+                    DataOutputStream dos = new DataOutputStream(ppa.get(player).getOutputStream());
+                    String respuestaEnviar = mpEnviar.createNGMensajePregunta(respuestas, currentPlayer.getNick());
+                    dos.write(respuestaEnviar.getBytes());
+                }
+
+
+            } else {
+                currentRoomManager.answer(currentPlayer, mrRecibido.getRespuesta(), challenge);
+                String respuestaEnviar = mpEnviar.createNGMensajePregunta(currentPlayer.getSatusPlayer().getStatus(), currentPlayer.getNick());
+                dos.write(respuestaEnviar.getBytes());
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -297,8 +376,8 @@ public class NGServerThread extends Thread {
             System.out.println("Recibimos S2: " + mfj_recibido.getOperacion());
             // Eliminamos el jugador de nuestra "base de datos".
             if (mfj_recibido.getOperacion().equals("FIN_JUEGO")) {
-                serverManager.removePlayer(player);
-                System.out.println("El usuario " + player.getNick() + " se ha desconectado del servidor");
+                serverManager.removePlayer(currentPlayer);
+                System.out.println("El usuario " + currentPlayer.getNick() + " se ha desconectado del servidor");
             }
             NGMensajeSalir ms = new NGMensajeSalir();
             String ms_enviar = ms.createNGMensajeSalir();
@@ -321,12 +400,12 @@ public class NGServerThread extends Thread {
             System.out.println("S recibe: " + s);
             NGMensajeSalirSala mssRecibido = new NGMensajeSalirSala();
             mssRecibido.processNGMensajeSalirSala(s);
-            boolean salirSala = serverManager.leaveRoom(player, roomManager, numSalaActual);
+            boolean salirSala = serverManager.leaveRoom(currentPlayer, currentRoomManager, numSalaActual);
             NGMensajeConfirmar mccEnviar = new NGMensajeConfirmar();
             String datosEnviar = mccEnviar.createNGMensajeConfirmar(salirSala);
             System.out.println("S envia: " + datosEnviar);
             dos.write(datosEnviar.getBytes());
-            this.player.setSatusPlayer(new NGRoomStatus(OFF_ROOM, "Fuera de sala"));
+            this.currentPlayer.setSatusPlayer(new NGRoomStatus(OFF_ROOM, "Fuera de sala"));
             return salirSala;
 
         } catch (IOException e) {
@@ -334,45 +413,5 @@ public class NGServerThread extends Thread {
         }
 
         return false;
-    }
-
-
-    private void processNewChallenge(NGChallenge challenge) throws IOException {
-        //We send the challenge to the client
-        //TODO
-        //Now we set the timeout
-        Timer timer = new Timer();
-        boolean timeout_triggered = false;
-        timer.schedule(new TimerTask() {
-                           @Override
-                           public void run() {
-                               System.out.println("Time's up!");
-                               timer.cancel();
-                           }
-                       }, roomManager.getTimeout(),
-                roomManager.getTimeout());
-        boolean answerProvided = false;
-        //Loop until an answer is provided or the timeout expires
-        while (!timeout_triggered && !respuestaOk) {
-            if (dis.available() > 0) {
-                //The client sent a message
-                //TODO Process the message
-                //IF ANSWER Then call roomManager.answer() and proceed
-                processAnswer(challenge);
-            } else
-                try {
-                    //To avoid a CPU-consuming busy wait
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-//Ignore }
-                }
-            if (!respuestaOk) {
-                //The timeout expired
-                timer.cancel();
-                //answerProvided = true;
-                //TODO call roomManager.noAnswer() and proceed
-                roomManager.noAnswer(player);
-            }
-        }
     }
 }

@@ -1,14 +1,20 @@
 package es.um.redes.nanoGames.server.roomManager;
 
 public class NGRoomStatus {
+
+    public static final byte SIN_TOKEN = 0;
+    public static final byte EN_JUEGO = 1;
+    public static final byte FIN_JUEGO = 2;
+    public static final byte PEDIR_RANKING = 3;
+    public static final byte EN_ESPERA = 4;
+    public static final byte GANADOR = 5;
+    public static final byte NO_GANADOR = 9;
+    public static final byte NO_CONTESTA = 10;
+
+
     public short statusNumber;
-    //TODO Change the status to represent accurately your game status
-    /*
-     * Sirve para codificar un cambio en el estado del juego, donde por estado se puede entender:
-     * entrada o salida de jugadores, cambios en la puntuación, respuestas de otros jugadores,
-     * consecuencia de un movimiento, finalización de una partida, etc.
-     */
     public String status;
+
 
     //Status initialization
     public NGRoomStatus() {
@@ -35,5 +41,13 @@ public class NGRoomStatus {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    @Override
+    public String toString() {
+        return "NGRoomStatus{" +
+                "statusNumber=" + statusNumber +
+                ", status='" + status + '\'' +
+                '}';
     }
 }

@@ -11,7 +11,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
-import jdk.nashorn.internal.objects.annotations.ScriptClass;
 
 /**
  * Cliente SNMP sin dependencias con otras clases y con funciones de consulta

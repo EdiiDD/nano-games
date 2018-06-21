@@ -8,21 +8,22 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class NGRoomAdivinarNumero extends NGRoomManager {
+public class NGRoomAdivinarNumeroTurno extends NGRoomManager {
 
 
     private static final int NUM_MAX_PLAYER = 2;
     private static final int NUM_MAX_TRY = 7;
-    private static double numeroAleatorio;
+    private static final double NUMERO_ALEATORIO = (int) (Math.random() * 20);
 
-    private final String NAME_ROOM = "ADVIVINZANZA NUMERO";
+    private final String NAME_ROOM = "ADVIVINZANZA NUMERO CON TURNOS";
     private int numJugadores;
     private Map<Integer, NGChallenge> mapasChallenge;
     private List<NGPlayerInfo> jugadoresSala;
     private NGRoomStatus estadoSala;
-    private int numeroJugadas;
+    private static int numeroJugadas;
+    private static int turnoJugadores;
 
-    public NGRoomAdivinarNumero() {
+    public NGRoomAdivinarNumeroTurno() {
         // Reglas de la sala.
         rules = rulesRoom();
         // Registration Name.
@@ -31,7 +32,6 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
         mapasChallenge = new HashMap<>();
         mapasChallenge = crearNGChallenge();
         jugadoresSala = new LinkedList<>();
-        numeroAleatorio = (int) (Math.random() * 20);
         gameTimeout = 1000000;
         estadoSala = new NGRoomStatus(NGRoomStatus.EN_ESPERA, "Sala en espera de jugadores");
         numeroJugadas = 0;
@@ -59,8 +59,14 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
         if (numJugadores > 1) {
             System.out.println("*Sala completa para jugar!!");
             setEstadoSala(new NGRoomStatus(NGRoomStatus.NO_GANADOR, "En Juego!!"));
+
             for (NGPlayerInfo player : jugadoresSala) {
-                player.setSatusPlayer(new NGRoomStatus(NGRoomStatus.NO_GANADOR, "No es Ganador!!"));
+                if (turnoJugadores % 2 == 0) {
+                    player.setEsTurno(true);
+                    turnoJugadores++;
+                }
+                player.setSatusPlayer(new NGRoomStatus(NGRoomStatus.NO_GANADOR, "El otro jugador aún no ha contestado!!"));
+                System.out.println(player.toString());
             }
             return p.getSatusPlayer();
         }
@@ -89,41 +95,61 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
         return p.getSatusPlayer();
     }
 
+    public void cambiarTurnos() {
+        for (NGPlayerInfo player : jugadoresSala) {
+            player.setEsTurno(!player.isEsTurno());
+        }
+    }
+
     @Override
     public NGRoomStatus answer(NGPlayerInfo p, String answer, NGChallenge challenge) {
         // Tratamiento de la respuesta por parte del cliente
         int numAnswer = Integer.valueOf(answer);
-
         // El jugador no ha acertado el numero aleatorio
-        if (numAnswer != numeroAleatorio && estadoSala.getStatusNumber() == NGRoomStatus.NO_GANADOR) {
-            p.jugadaHecha();
-            System.out.println("*El jugador " + p.getNick() + " ha realizado " + p.getJugadasHechas() + " jugadas");
-            String calienteFrio = "";
-            if (numAnswer - numeroAleatorio < 0) {
-                calienteFrio = "Te has quedado por debajo, INTENTALO DE NUEVO!!";
-            } else {
-                calienteFrio = "Te has quedado por encima, INTENTALO DE NUEVO!!";
+        System.out.println("Numero aleatorio: " + NUMERO_ALEATORIO);
+        if (p.isEsTurno()) {
+            if (numAnswer != NUMERO_ALEATORIO && estadoSala.getStatusNumber() == NGRoomStatus.NO_GANADOR) {
+                p.jugadaHecha();
+                System.out.println("*El jugador " + p.getNick() + " ha realizado " + p.getJugadasHechas() + " jugadas");
+                String calienteFrio = "";
+                if (numAnswer - NUMERO_ALEATORIO < 0) {
+                    calienteFrio = "La respuesta de " + p.getNick() + " es: " + numAnswer + " y se ha quedado por debajo!!";
+                } else {
+                    calienteFrio = "La respuesta de " + p.getNick() + " es: " + numAnswer + " y se ha quedado por encima!!";
+                }
+                p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.NO_GANADOR, calienteFrio));
+                setEstadoSala(new NGRoomStatus(NGRoomStatus.NO_GANADOR, calienteFrio));
+
+            } // El Jugador acierta el numero aleatorio.
+            else if (numAnswer == NUMERO_ALEATORIO && estadoSala.getStatusNumber() == NGRoomStatus.NO_GANADOR) {
+                p.actulizarScore(puntiacionChallenge(p, challenge));
+                p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.GANADOR, "¡¡HAS GANADO " + p.getNick() + " FELICIDADES!! " + puntuacionSala()));
+                System.out.println("*El jugador " + p.getNick() + "recibe " + puntiacionChallenge(p, challenge) + " pts");
+                setEstadoSala(new NGRoomStatus(NGRoomStatus.GANADOR, "HAY UN GANADOR!!"));
             }
-            p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.NO_GANADOR, calienteFrio));
-            setEstadoSala(new NGRoomStatus(NGRoomStatus.NO_GANADOR, calienteFrio));
-        } // El Jugador acierta el numero aleatorio.
-        else if (numAnswer == numeroAleatorio && estadoSala.getStatusNumber() == NGRoomStatus.NO_GANADOR) {
-            p.actulizarScore(puntiacionChallenge(p,challenge));
-            p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.GANADOR, "¡¡HAS GANADO FELICIDADES!! " + puntuacionSala()));
-            System.out.println("*El jugador " + p.getNick() + "recibe " + puntiacionChallenge(p,challenge) +" pts");
-            setEstadoSala(new NGRoomStatus(NGRoomStatus.GANADOR, "HAY UN GANADOR!!"));
+            // El numero aleatorio ya fue acertado
+            else if (estadoSala.getStatusNumber() == NGRoomStatus.GANADOR) {
+                p.actulizarScore(0);
+                p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.NO_GANADOR, "¡¡HAS PERDIDO " + p.getNick() + " SUERTE LA PROXIMA VEZ!! " + puntuacionSala()));
+                setEstadoSala(new NGRoomStatus(NGRoomStatus.GANADOR, "HAY UN GANADOR!!"));
+            }
+            // No hay jugadores en la sala.
+            else if (estadoSala.getStatusNumber() == NGRoomStatus.EN_ESPERA) {
+                p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.EN_ESPERA, "¡¡En espera de jugadores!!"));
+                setEstadoSala(new NGRoomStatus(NGRoomStatus.EN_ESPERA, "¡¡En espera de jugadores!!"));
+            }
+        } else {
+            // No hay jugadores en la sala.
+            if (estadoSala.getStatusNumber() == NGRoomStatus.EN_ESPERA) {
+                p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.EN_ESPERA, "¡¡En espera de jugadores!!"));
+                setEstadoSala(new NGRoomStatus(NGRoomStatus.EN_ESPERA, "¡¡En espera de jugadores!!"));
+            } else {
+                p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.NO_GANADOR, "No es tu turno, espera a que el otro jugador conteste!!"));
+                setEstadoSala(new NGRoomStatus(NGRoomStatus.NO_GANADOR, "Respuesta realizada fuera de turno!!"));
+            }
         }
-        // El numero aleatorio ya fue acertado
-        else if (estadoSala.getStatusNumber() == NGRoomStatus.GANADOR) {
-            p.actulizarScore(0);
-            p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.NO_GANADOR, "¡¡HAS PERDIDO SUERTE LA PROXIMA VEZ!! " + puntuacionSala()));
-            setEstadoSala(new NGRoomStatus(NGRoomStatus.GANADOR, "HAY UN GANADOR!!"));
-        }
-        // No hay jugadores en la sala.
-        else if (estadoSala.getStatusNumber() == NGRoomStatus.EN_ESPERA) {
-            p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.EN_ESPERA, "¡¡En espera de jugadores!!"));
-            setEstadoSala(new NGRoomStatus(NGRoomStatus.EN_ESPERA, "¡¡En espera de jugadores!!"));
-        }
+        if (p.isEsTurno())
+            cambiarTurnos();
         return p.getSatusPlayer();
     }
 
@@ -219,10 +245,10 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
     }
 
     public static double getNumeroAleatorio() {
-        return numeroAleatorio;
+        return NUMERO_ALEATORIO;
     }
 
-    public int puntiacionChallenge(NGPlayerInfo player,NGChallenge challenge) {
+    public int puntiacionChallenge(NGPlayerInfo player, NGChallenge challenge) {
         if (player.getJugadasHechas() == challenge.getChallengeNumber())
             return challenge.getChallengeNumber();
         return 1;

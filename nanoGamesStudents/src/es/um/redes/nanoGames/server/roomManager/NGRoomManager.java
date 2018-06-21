@@ -6,10 +6,6 @@ import java.util.Timer;
 
 public abstract class NGRoomManager {
 
-    public static final byte GANADOR = 0;
-    public static final byte NO_GANADOR = -1;
-    public static final byte NO_CONTESTA = -2;
-
     String rules;
     String registrationName;
     String description;
@@ -23,6 +19,8 @@ public abstract class NGRoomManager {
 
     //The current status is returned
     public abstract NGRoomStatus checkStatus(NGPlayerInfo p);
+
+    public abstract NGRoomStatus getEstadoSala();
 
     //Check for a new challenge. We can make use of that checking in order to build a new one if the conditions are satisfied
     public abstract NGChallenge checkChallenge(NGPlayerInfo p);
@@ -56,5 +54,6 @@ public abstract class NGRoomManager {
         return gameTimeout;
     }
 
+    public abstract String puntuacionSala();
 
 }

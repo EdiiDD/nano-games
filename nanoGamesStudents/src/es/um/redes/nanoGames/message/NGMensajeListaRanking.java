@@ -37,15 +37,5 @@ public class NGMensajeListaRanking {
 	public int getNumRanking() {
 		return this.numRanking;
 	}
-	
-	public static void main(String[] args) {
-		NGMensajeListaRanking mlr_emisor = new NGMensajeListaRanking();
-		String datos_emisor = mlr_emisor.createNGMensajeListaRanking("shurmanito69 - 20 puntos - 0.5 secs & mis25centimetros - 19 puntos - 0.4 secs");
-		System.out.println("Enviando por DOS: "+datos_emisor);
-		System.out.println("- - - Recibiendo - - - ");
-		NGMensajeListaRanking mlr_receptor = new NGMensajeListaRanking();
-		mlr_receptor.processNGMensajeListaRanking(datos_emisor);
-		for (int i=0; i<mlr_receptor.getNumRanking(); i++)
-			System.out.println("\t"+(i+1)+"º: "+mlr_receptor.getRanking(i));
-	}
+
 }

@@ -19,7 +19,7 @@ public class NGGameClient {
     protected DataInputStream dis;
 
     private static final int SERVER_PORT = 6969;
-    private static final int MAXIMUM_TCP_SIZE = 65535;
+    public static final int MAXIMUM_TCP_SIZE = 65535;
     private int numSalaActual;
 
     public NGGameClient(String serverName) {
@@ -215,12 +215,32 @@ public class NGGameClient {
             String datosRecibidos = new String(arraybytes);
             NGMensajeConfirmar mcRecibido = new NGMensajeConfirmar();
             mcRecibido.processNGMensajeConfirmar(datosRecibidos);
-            if(mcRecibido.isConfirmated()){
+            if (mcRecibido.isConfirmated()) {
                 System.out.println("Has salido de la sala");
-            }
-            else System.out.println("No has poodido salir de la sala");
+            } else System.out.println("No has poodido salir de la sala");
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void processGameMessage() {
+        try {
+            NGMensajePregunta mpRecibido = new NGMensajePregunta();
+            byte[] arrayBytes = new byte[NGGameClient.MAXIMUM_TCP_SIZE];
+            dis.read(arrayBytes);
+            String respuestaRecibida = new String(arrayBytes);
+            mpRecibido.processNGMensajePregunta(respuestaRecibida);
+            System.out.println(mpRecibido.getInfo());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public DataOutputStream getDos() {
+        return dos;
+    }
+
+    public DataInputStream getDis() {
+        return dis;
     }
 }
