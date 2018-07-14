@@ -11,6 +11,11 @@ public class NGRoomStatus {
     public static final byte NO_GANADOR = 9;
     public static final byte NO_CONTESTA = 10;
 
+    public static final byte SIN_NOMBRE = 11;
+    public static final byte SIN_SALA = 12;
+    public static final byte PEDIR_SALA = 13;
+    public static final byte SALIR_SALA = 14;
+
 
     public short statusNumber;
     public String status;

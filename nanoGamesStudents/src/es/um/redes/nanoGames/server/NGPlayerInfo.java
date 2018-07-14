@@ -84,4 +84,8 @@ public class NGPlayerInfo {
     public void setEsTurno(boolean esTurno) {
         this.esTurno = esTurno;
     }
+
+    public void setJugadasHechas(int jugadasHechas) {
+        this.jugadasHechas = jugadasHechas;
+    }
 }

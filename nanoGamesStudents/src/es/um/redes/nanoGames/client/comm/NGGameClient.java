@@ -92,7 +92,7 @@ public class NGGameClient {
     }
 
     public void seeRoomList() {
-        NGMensajeListaSalas mls_recived = new NGMensajeListaSalas();
+        NGMensajeListaSalas mls_recived;
         int numSalas = 0;
         try {
             NGMensajeListarSalas mls_enviar = new NGMensajeListarSalas();
@@ -106,9 +106,13 @@ public class NGGameClient {
             mls_recived.processNGMensajeListaSalas(data_recived);
 
             numSalas = mls_recived.getNumSalas();
-            System.out.println("Salas disponibles:");
-            for (int i = 0; i < numSalas; i++) {
-                System.out.println((i + 1) + " " + mls_recived.getSala(i));
+            if (numSalas > 0) {
+                System.out.println("Salas disponibles:");
+                for (int i = 0; i < numSalas; i++) {
+                    System.out.println((i + 1) + " " + mls_recived.getSala(i));
+                }
+            } else if (numSalas == -1) {
+                System.out.println("Para visualizar las salas tienes que estar registrado.");
             }
 
         } catch (IOException e) {
@@ -128,8 +132,23 @@ public class NGGameClient {
     }
 
     // To close the communication with the server
+
     public void disconnect() {
-        // TODO
+        try {
+            NGMensajeFinJuego mfj = new NGMensajeFinJuego();
+            String datosEnviar = mfj.createNGMensajeFinJuego();
+            System.out.println("Enviamos: " + datosEnviar);
+            dos.write(datosEnviar.getBytes());
+
+            byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
+            dis.read(arrayBytes);
+            String data_recived = new String(arrayBytes);
+            NGMensajeSalir mc_recived = new NGMensajeSalir();
+            mc_recived.processNGMensajeSalir(data_recived);
+            System.out.println("El jugador se ha desconectado del servidor.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public boolean enterTheRoom(int numSala) {
@@ -151,7 +170,7 @@ public class NGGameClient {
                 System.out.println("Has entrado a la sala " + numSala);
                 numSalaActual = numSala;
             } else {
-                System.out.println("No se puede entrar a la sala, prueba dentro de unos minutos.");
+                System.out.println("Error al entrar a la sala, prueba a ver de nuevo la salas.");
             }
             return mensajeConfirmarRecibido.isConfirmated();
         } catch (IOException e) {
@@ -173,8 +192,12 @@ public class NGGameClient {
             byte[] arrayBytes = new byte[MAXIMUM_TCP_SIZE];
             dis.read(arrayBytes);
             String datosRecibidos = new String(arrayBytes);
-            mpRecibido.processNGMensajePregunta(datosRecibidos);
-            System.out.println(mpRecibido.getInfo());
+            if (datosRecibidos != null) {
+                mpRecibido.processNGMensajePregunta(datosRecibidos);
+                System.out.println(mpRecibido.getInfo());
+            } else
+                System.out.println("No has contestadoo a tiempo");
+
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -209,14 +232,13 @@ public class NGGameClient {
             NGMensajeSalirSala mssEnviar = new NGMensajeSalirSala();
             String datosEnvia = mssEnviar.createNGMensajeSalirSala();
             dos.write(datosEnvia.getBytes());
-
             byte[] arraybytes = new byte[MAXIMUM_TCP_SIZE];
             dis.read(arraybytes);
             String datosRecibidos = new String(arraybytes);
             NGMensajeConfirmar mcRecibido = new NGMensajeConfirmar();
             mcRecibido.processNGMensajeConfirmar(datosRecibidos);
             if (mcRecibido.isConfirmated()) {
-                System.out.println("Has salido de la sala");
+                System.out.print("Has salido de la sala. Puedes volver a pedir la lista de salas!!");
             } else System.out.println("No has poodido salir de la sala");
         } catch (IOException e) {
             e.printStackTrace();
@@ -234,6 +256,10 @@ public class NGGameClient {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void mostrarPantalla() {
+        System.out.println();
     }
 
     public DataOutputStream getDos() {

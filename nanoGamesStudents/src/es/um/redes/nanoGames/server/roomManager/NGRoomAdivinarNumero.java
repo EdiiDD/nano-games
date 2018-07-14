@@ -11,7 +11,7 @@ import java.util.Map;
 public class NGRoomAdivinarNumero extends NGRoomManager {
 
 
-    private static final int NUM_MAX_PLAYER = 2;
+    private static final int NUM_MAX_PLAYER = 1;
     private static final int NUM_MAX_TRY = 7;
     private static double numeroAleatorio;
 
@@ -19,8 +19,8 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
     private int numJugadores;
     private Map<Integer, NGChallenge> mapasChallenge;
     private List<NGPlayerInfo> jugadoresSala;
-    private NGRoomStatus estadoSala;
-    private int numeroJugadas;
+    private static NGRoomStatus estadoSala;
+    private int numChallenge;
 
     public NGRoomAdivinarNumero() {
         // Reglas de la sala.
@@ -32,9 +32,9 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
         mapasChallenge = crearNGChallenge();
         jugadoresSala = new LinkedList<>();
         numeroAleatorio = (int) (Math.random() * 20);
-        gameTimeout = 1000000;
+        gameTimeout = 50000;
         estadoSala = new NGRoomStatus(NGRoomStatus.EN_ESPERA, "Sala en espera de jugadores");
-        numeroJugadas = 0;
+
     }
 
     @Override
@@ -56,18 +56,21 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
     @Override
     public NGRoomStatus checkStatus(NGPlayerInfo p) {
         // Si hay mas de un jugador, se puede realizar la partida
-        if (numJugadores > 1) {
+        System.out.println(numJugadores);
+        System.out.println(NUM_MAX_PLAYER);
+        if (numJugadores == NUM_MAX_PLAYER) {
             System.out.println("*Sala completa para jugar!!");
             setEstadoSala(new NGRoomStatus(NGRoomStatus.NO_GANADOR, "En Juego!!"));
             for (NGPlayerInfo player : jugadoresSala) {
                 player.setSatusPlayer(new NGRoomStatus(NGRoomStatus.NO_GANADOR, "No es Ganador!!"));
             }
             return p.getSatusPlayer();
+        }else {
+            System.out.println("*Sala incompleta para jugar.");
+            setEstadoSala(new NGRoomStatus(NGRoomStatus.EN_ESPERA, "En Espera de Jugadores!!"));
+            p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.EN_ESPERA, "En Espera de Jugadores!!"));
+            return p.getSatusPlayer();
         }
-        System.out.println("*Sala incompleta para jugar.");
-        setEstadoSala(new NGRoomStatus(NGRoomStatus.EN_ESPERA, "En Espera de Jugadores!!"));
-        p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.EN_ESPERA, "En Espera de Jugadores!!"));
-        return p.getSatusPlayer();
     }
 
     @Override
@@ -78,13 +81,15 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
     @Override
     public NGChallenge checkChallenge(NGPlayerInfo p) {
         // Devolvemos un challenge aleatorio.
-        int numChallenge = (int) (Math.random() * mapasChallenge.size()) + 1;
+        numChallenge= (int) (Math.random() * mapasChallenge.size()) + 1;
         return mapasChallenge.get(numChallenge);
     }
 
     @Override
     public NGRoomStatus noAnswer(NGPlayerInfo p) {
+        // Borro al Jugador de la Sala.
         removePlayer(p);
+        // Cambio su estado.
         p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.NO_CONTESTA, "El Jugador no ha conestatado en el tiempo requerido"));
         return p.getSatusPlayer();
     }
@@ -93,11 +98,9 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
     public NGRoomStatus answer(NGPlayerInfo p, String answer, NGChallenge challenge) {
         // Tratamiento de la respuesta por parte del cliente
         int numAnswer = Integer.valueOf(answer);
-
         // El jugador no ha acertado el numero aleatorio
         if (numAnswer != numeroAleatorio && estadoSala.getStatusNumber() == NGRoomStatus.NO_GANADOR) {
             p.jugadaHecha();
-            System.out.println("*El jugador " + p.getNick() + " ha realizado " + p.getJugadasHechas() + " jugadas");
             String calienteFrio = "";
             if (numAnswer - numeroAleatorio < 0) {
                 calienteFrio = "Te has quedado por debajo, INTENTALO DE NUEVO!!";
@@ -108,13 +111,15 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
             setEstadoSala(new NGRoomStatus(NGRoomStatus.NO_GANADOR, calienteFrio));
         } // El Jugador acierta el numero aleatorio.
         else if (numAnswer == numeroAleatorio && estadoSala.getStatusNumber() == NGRoomStatus.NO_GANADOR) {
+            p.jugadaHecha();
             p.actulizarScore(puntiacionChallenge(p,challenge));
             p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.GANADOR, "¡¡HAS GANADO FELICIDADES!! " + puntuacionSala()));
-            System.out.println("*El jugador " + p.getNick() + "recibe " + puntiacionChallenge(p,challenge) +" pts");
+            System.out.println("*El jugador " + p.getNick() + " recibe " + puntiacionChallenge(p,challenge) +" pts");
             setEstadoSala(new NGRoomStatus(NGRoomStatus.GANADOR, "HAY UN GANADOR!!"));
         }
         // El numero aleatorio ya fue acertado
         else if (estadoSala.getStatusNumber() == NGRoomStatus.GANADOR) {
+            p.jugadaHecha();
             p.actulizarScore(0);
             p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.NO_GANADOR, "¡¡HAS PERDIDO SUERTE LA PROXIMA VEZ!! " + puntuacionSala()));
             setEstadoSala(new NGRoomStatus(NGRoomStatus.GANADOR, "HAY UN GANADOR!!"));
@@ -130,6 +135,7 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
     @Override
     public void removePlayer(NGPlayerInfo p) {
         jugadoresSala.remove(p);
+        if ( jugadoresSala.size() < NUM_MAX_PLAYER)
         p.setSatusPlayer(new NGRoomStatus(NGRoomStatus.FIN_JUEGO, "Salir del Juego!!"));
     }
 
@@ -223,7 +229,9 @@ public class NGRoomAdivinarNumero extends NGRoomManager {
     }
 
     public int puntiacionChallenge(NGPlayerInfo player,NGChallenge challenge) {
-        if (player.getJugadasHechas() == challenge.getChallengeNumber())
+        System.out.println("Num Jugadas: " + player.getJugadasHechas());
+        System.out.println("Puntos: " + challenge.getChallengeNumber());
+        if (player.getJugadasHechas() == numChallenge)
             return challenge.getChallengeNumber();
         return 1;
     }

@@ -47,15 +47,22 @@ public class NGController {
     private DatagramSocket socket;
     // Solo se puede logear 1 vez.
     private boolean estaLogeado;
+    // Aun no ha pedido la lista de salas
+    private boolean noEnSala;
+    // Esta dentro de una sala de juegos
+    private boolean estaEnSala;
 
     public NGController(String brokerHostname, String serverHostname) {
         brokerClient = new BrokerClient(brokerHostname);
         shell = new NGShell();
         this.serverHostname = serverHostname;
         this.ngClient = new NGGameClient(serverHostname);
+        this.estaLogeado = false;
+        this.noEnSala = false;
+        this.estaEnSala = false;
     }
 
-    public  byte getCurrentCommand() {
+    public static byte getCurrentCommand() {
         return currentCommand;
     }
 
@@ -95,7 +102,7 @@ public class NGController {
                 }
                 break;
             case NGCommands.COM_ROOMLIST:
-                getRoomList();
+                getAndShowRooms();
                 break;
             case NGCommands.COM_ENTER:
                 enterTheGame();
@@ -113,18 +120,10 @@ public class NGController {
         }
     }
 
-    private boolean enterTheRoom() {
-        return ngClient.enterTheRoom(Integer.valueOf(room));
-    }
-
-    private void getRoomList() {
-        ngClient.seeRoomList();
-
-    }
-
     private void getAndShowRooms() {
         // We obtain the rooms from the server and we display them
-        // TODO
+        this.noEnSala = true;
+        ngClient.seeRoomList();
     }
 
     private void registerNickName() {
@@ -145,16 +144,20 @@ public class NGController {
 
     }
 
-    private void enterTheGame() {
+    private boolean enterTheGame() {
         // The users request to enter in the room
-        enterTheRoom();
-        sendRules();
+        //this.estaEnSala = enterTheRoom();
+        boolean entrarSala = ngClient.enterTheRoom(Integer.valueOf(room));
+        //sendRules();
         // If success, we change the state in order to accept new commands
-        do {
-            // We will only accept commands related to a room
-            readGameCommandFromShell();
-            processGameCommand();
-        } while (currentCommand != NGCommands.COM_EXIT);
+        if (entrarSala) {
+            do {
+                // We will only accept commands related to a room
+                readGameCommandFromShell();
+                processGameCommand();
+            } while (currentCommand != NGCommands.COM_EXIT);
+        }
+        return entrarSala;
     }
 
     private void processGameCommand() {
@@ -175,6 +178,7 @@ public class NGController {
                 break;
             case NGCommands.COM_EXIT:
                 exitRoomGame();
+                ngClient.mostrarPantalla();
         }
     }
 
@@ -268,8 +272,6 @@ public class NGController {
     public boolean shouldQuit() {
         return currentCommand == NGCommands.COM_QUIT;
     }
-
-    // Metodos para el control de usuarios.
 
 
 }

@@ -115,10 +115,10 @@ public class NGShell {
                 try {
                     if (ngclient.isDataAvailable()) {
                         //if the socket has data then we set the current command as SOCKET_IN and return
-                        //System.out.println("* Message received from server...");
                         command = NGCommands.COM_SOCKET_IN;
                         ngclient.processGameMessage();
                         //return null;
+                        System.out.println("* Message received from server...");
                         blocked = false;
                     } else if (standardInput.ready()) {
                         //if the user type one line the we read the line and exit the loop

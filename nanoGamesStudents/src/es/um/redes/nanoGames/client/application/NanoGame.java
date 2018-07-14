@@ -23,7 +23,6 @@ public class NanoGame {
             } while (controller.shouldQuit() == false);
         } else
             System.out.println("ERROR: broker not available.");
-
         System.out.println("Bye.");
     }
 }
